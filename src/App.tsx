@@ -102,6 +102,34 @@ function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      const {
+        enableTray, enableAutostart, registerShortcut,
+      } = await import("./utils/residentCommands");
+      const s = useSettings.getState();
+      try {
+        if (s.tray_enabled) await enableTray(true);
+        if (s.autostart_enabled) await enableAutostart(true);
+        if (s.shortcut_enabled) await registerShortcut(s.shortcut_combo);
+      } catch (e) { console.error("resident-mode boot replay failed", e); }
+    })();
+  }, []);
+
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    (async () => {
+      const { listenClipboardCleared } = await import("./utils/crossWindowEvents");
+      const { notifyClipboardCleared } = await import("./utils/residentCommands");
+      unlisten = await listenClipboardCleared(() => {
+        if (useSettings.getState().notifications_enabled) {
+          notifyClipboardCleared().catch(() => {});
+        }
+      });
+    })();
+    return () => { unlisten?.(); };
+  }, []);
+
   return (
     <main className="app">
       <header className="app-header">
