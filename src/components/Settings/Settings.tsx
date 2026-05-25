@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { useSettings } from "../../stores/settingsStore";
 import { useGenerator } from "../../stores/generatorStore";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
+import { ResidentModeSection } from "./ResidentModeSection";
 
 export function Settings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const s = useSettings();
@@ -87,6 +88,8 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
           <label className="check"><input type="checkbox" checked={phraseOpts.append_digits} onChange={(e) => setPhraseOpts({ append_digits: e.target.checked })} /> Ajouter 2 chiffres</label>
           <label className="check"><input type="checkbox" checked={phraseOpts.append_symbol} onChange={(e) => setPhraseOpts({ append_symbol: e.target.checked })} /> Ajouter 1 symbole</label>
         </section>
+
+        <ResidentModeSection />
       </div>
     </aside>
   );
