@@ -17,6 +17,18 @@ export const useSettings = create<SettingsState>()(
     {
       name: "unbreakable.settings",
       storage: createJSONStorage(() => localStorage),
+      version: 1,
+      migrate: (persisted: unknown, _version: number) => {
+        const old = (persisted as Record<string, unknown>) ?? {};
+        return {
+          ...old,
+          tray_enabled: old.tray_enabled ?? false,
+          autostart_enabled: old.autostart_enabled ?? false,
+          shortcut_enabled: old.shortcut_enabled ?? false,
+          shortcut_combo: old.shortcut_combo ?? "CommandOrControl+Alt+P",
+          notifications_enabled: old.notifications_enabled ?? false,
+        } as never;
+      },
     },
   ),
 );

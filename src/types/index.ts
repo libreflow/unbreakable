@@ -37,6 +37,11 @@ export interface AppSettings {
   theme: "auto" | "light" | "dark";
   auto_copy_on_open: boolean;
   history_max: number;
+  tray_enabled: boolean;
+  autostart_enabled: boolean;
+  shortcut_enabled: boolean;
+  shortcut_combo: string;
+  notifications_enabled: boolean;
 }
 
 export const DEFAULT_PASSWORD_OPTS: PasswordOptions = {
@@ -64,4 +69,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
   theme: "auto",
   auto_copy_on_open: true,
   history_max: 200,
+  tray_enabled: false,
+  autostart_enabled: false,
+  shortcut_enabled: false,
+  shortcut_combo: "CommandOrControl+Alt+P",
+  notifications_enabled: false,
 };
