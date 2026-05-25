@@ -70,14 +70,14 @@ function App() {
     if (!password) return;
     await copyToClipboard(password);
     setCopied("password", ttl);
-    addHistory("password", password, analyzeStrength(password).score).catch(() => {});
+    addHistory("password", password, analyzeStrength(password).score);
   }, [password, setCopied, ttl, addHistory]);
 
   const copyPhrase = useCallback(async () => {
     if (!passphrase) return;
     await copyToClipboard(passphrase);
     setCopied("passphrase", ttl);
-    addHistory("passphrase", passphrase, analyzeStrength(passphrase).score).catch(() => {});
+    addHistory("passphrase", passphrase, analyzeStrength(passphrase).score);
   }, [passphrase, setCopied, ttl, addHistory]);
 
   useKeyboardShortcuts({
@@ -102,6 +102,10 @@ function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Boot replay — re-applies resident-mode toggles after restart.
+  // Safe to read getState() synchronously because Zustand persist uses
+  // sync localStorage; if storage ever switches to async (IndexedDB, Tauri
+  // store), this needs to await hydration first.
   useEffect(() => {
     (async () => {
       const {
@@ -129,6 +133,46 @@ function App() {
     })();
     return () => { unlisten?.(); };
   }, []);
+
+  // B1: arm TTL timer when QuickPop (or any other window) copies a secret.
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    (async () => {
+      const { listenSecretCopied } = await import("./utils/crossWindowEvents");
+      unlisten = await listenSecretCopied(({ kind, ttl: t }) => {
+        useClipboard.getState().setCopied(kind, t);
+      });
+    })();
+    return () => { unlisten?.(); };
+  }, []);
+
+  // B2: tray "Générer & copier" menu items emit this event with the kind.
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    (async () => {
+      const { listen } = await import("@tauri-apps/api/event");
+      unlisten = await listen<string>("tray-generate-and-copy", async (e) => {
+        const kind = e.payload === "passphrase" ? "passphrase" : "password";
+        try {
+          const opts = useGenerator.getState();
+          const secret = kind === "password"
+            ? await generatePassword(opts.pwdOpts)
+            : await generatePassphrase(opts.phraseOpts);
+          if (kind === "password") setPassword(secret);
+          else setPassphrase(secret);
+          await copyToClipboard(secret);
+          const settings = useSettings.getState();
+          setCopied(kind, settings.ttl_seconds);
+          addHistory(kind, secret, analyzeStrength(secret).score);
+          if (settings.notifications_enabled) {
+            const { notifyCopied } = await import("./utils/residentCommands");
+            notifyCopied(kind, settings.ttl_seconds).catch(() => {});
+          }
+        } catch (err) { console.error("tray-generate-and-copy failed", err); }
+      });
+    })();
+    return () => { unlisten?.(); };
+  }, [setCopied, addHistory, setPassword, setPassphrase]);
 
   return (
     <main className="app">

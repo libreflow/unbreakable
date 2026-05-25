@@ -70,6 +70,9 @@ pub fn set_active<R: Runtime>(app: &AppHandle<R>, active: bool) -> Result<(), St
     if let Some(tray) = app.tray_by_id(TRAY_ID) {
         let icon = load_icon(active);
         tray.set_icon(Some(icon)).map_err(|e| e.to_string())?;
+        let _ = app.emit(crate::events::EVT_TRAY_ICON_STATE, crate::events::TrayIconStatePayload {
+            state: if active { "active".into() } else { "idle".into() },
+        });
     }
     Ok(())
 }

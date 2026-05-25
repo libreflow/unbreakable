@@ -1,3 +1,8 @@
+// Event payload schema mirror — TS side (src/utils/crossWindowEvents.ts) is the
+// active emitter for most of these; Rust definitions exist for type safety on
+// the Rust-side emit/listen paths and as documentation.
+#![allow(dead_code)]
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

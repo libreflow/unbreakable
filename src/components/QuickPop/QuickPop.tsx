@@ -16,12 +16,16 @@ export function QuickPop() {
 
   const [secret, setSecret] = useState<string>("");
   const copyBtnRef = useRef<HTMLButtonElement>(null);
+  const reqIdRef = useRef(0);
 
   const regenerate = async () => {
+    const myReq = ++reqIdRef.current;
     try {
       const s = defaultKind === "password"
         ? await generatePassword(pwdOpts)
         : await generatePassphrase(phraseOpts);
+      // Ignore stale responses if a newer regenerate was requested.
+      if (myReq !== reqIdRef.current) return;
       setSecret(s);
     } catch (e) { console.error(e); }
   };

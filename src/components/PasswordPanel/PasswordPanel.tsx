@@ -31,7 +31,7 @@ export function PasswordPanel() {
     if (!password) return;
     await copyToClipboard(password);
     setCopied("password", ttl);
-    addHistory("password", password, score).catch(() => {});
+    addHistory("password", password, score);
   };
 
   return (

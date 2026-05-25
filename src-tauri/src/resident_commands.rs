@@ -1,8 +1,8 @@
-use tauri::{AppHandle, Emitter, Manager, Runtime};
+use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_autostart::ManagerExt;
 use tauri_plugin_notification::NotificationExt;
 
-use crate::{events::TrayIconStatePayload, quick_window, shortcuts, tray};
+use crate::{quick_window, shortcuts, tray};
 
 #[tauri::command]
 pub fn enable_tray<R: Runtime>(app: AppHandle<R>, enable: bool) -> Result<(), String> {
@@ -76,9 +76,5 @@ pub fn notify_clipboard_cleared<R: Runtime>(app: AppHandle<R>) -> Result<(), Str
 
 #[tauri::command]
 pub fn set_tray_active<R: Runtime>(app: AppHandle<R>, active: bool) -> Result<(), String> {
-    tray::set_active(&app, active)?;
-    let _ = app.emit(crate::events::EVT_TRAY_ICON_STATE, TrayIconStatePayload {
-        state: if active { "active".into() } else { "idle".into() },
-    });
-    Ok(())
+    tray::set_active(&app, active)
 }

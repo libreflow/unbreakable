@@ -30,7 +30,7 @@ export function PassphrasePanel() {
     if (!passphrase) return;
     await copyToClipboard(passphrase);
     setCopied("passphrase", ttl);
-    addHistory("passphrase", passphrase, score).catch(() => {});
+    addHistory("passphrase", passphrase, score);
   };
 
   const sep = phraseOpts.separator;
