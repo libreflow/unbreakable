@@ -29,7 +29,7 @@ tauri-plugin-notification = "2"
 getrandom = "0.4.2"
 zeroize = "1.8.2"
 thiserror = "2.0.18"
-keyring = "3.6"
+keyring = { version = "3.6", features = ["windows-native", "apple-native"] }
 aes-gcm = "0.10"
 argon2 = "0.5"
 hkdf = "0.12"

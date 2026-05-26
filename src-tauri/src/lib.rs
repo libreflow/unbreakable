@@ -1,5 +1,5 @@
 mod commands;
-mod crypto;
+pub mod crypto;
 mod display;
 mod errors;
 mod events;
