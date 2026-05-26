@@ -1,5 +1,6 @@
 mod commands;
 mod crypto;
+mod display;
 mod errors;
 mod events;
 mod quick_window;
