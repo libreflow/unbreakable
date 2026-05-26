@@ -3,7 +3,8 @@ import { useSettings } from "../../stores/settingsStore";
 import { useGenerator } from "../../stores/generatorStore";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { ResidentModeSection } from "./ResidentModeSection";
-import type { PassphraseLang } from "../../types";
+import { SecuritySection } from "./SecuritySection";
+
 
 export function Settings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const s = useSettings();
@@ -68,15 +69,6 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
 
         <section>
           <h3>Passphrase</h3>
-          <label>Langue
-            <select value={s.passphrase_lang} onChange={(e) => s.set({ passphrase_lang: e.target.value as PassphraseLang })}>
-              <option value="en">EN — English</option>
-              <option value="fr">FR — Français</option>
-              <option value="de">DE — Deutsch</option>
-              <option value="es">ES — Español</option>
-              <option value="it">IT — Italiano</option>
-            </select>
-          </label>
           <label>Nombre de mots : {phraseOpts.words}
             <input
               type="range" min={4} max={12} value={phraseOpts.words}
@@ -92,6 +84,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
           <label className="check"><input type="checkbox" checked={phraseOpts.include_symbol} onChange={(e) => setPhraseOpts({ include_symbol: e.target.checked })} /> Ajouter 1 symbole</label>
         </section>
 
+        <SecuritySection />
         <ResidentModeSection />
       </div>
     </aside>
