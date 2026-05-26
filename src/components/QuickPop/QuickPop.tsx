@@ -7,12 +7,18 @@ import { analyzeStrength } from "../../utils/strength";
 import { emitSecretCopied } from "../../utils/crossWindowEvents";
 import { notifyCopied, showMainWindow } from "../../utils/residentCommands";
 import { StrengthMeter } from "../StrengthMeter/StrengthMeter";
+import { setWindowProtected } from "../../utils/windowProtection";
 
 export function QuickPop() {
   const defaultKind = useSettings((s) => s.default_copy);
   const ttl = useSettings((s) => s.ttl_seconds);
   const notifEnabled = useSettings((s) => s.notifications_enabled);
   const { pwdOpts, phraseOpts } = useGenerator();
+
+  useEffect(() => {
+    setWindowProtected("quick", true).catch(() => {});
+    return () => { setWindowProtected("quick", false).catch(() => {}); };
+  }, []);
 
   const [secret, setSecret] = useState<string>("");
   const copyBtnRef = useRef<HTMLButtonElement>(null);
