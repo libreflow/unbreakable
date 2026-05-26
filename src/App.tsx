@@ -18,6 +18,9 @@ import {
   generatePassword,
 } from "./utils/tauriCommands";
 import { analyzeStrength } from "./utils/strength";
+import { vault } from "./utils/vault";
+import { UnlockModal } from "./components/Modals/UnlockModal";
+import { MigrationModal, detectLegacyCount } from "./components/Modals/MigrationModal";
 
 function applyTheme(theme: "auto" | "light" | "dark") {
   const root = document.documentElement;
@@ -28,6 +31,12 @@ function applyTheme(theme: "auto" | "light" | "dark") {
     root.dataset.theme = theme;
   }
 }
+
+type BootState =
+  | { phase: "loading" }
+  | { phase: "unlock" }
+  | { phase: "migrate"; count: number }
+  | { phase: "ready" };
 
 function App() {
   useAutoGenerate();
@@ -43,6 +52,8 @@ function App() {
   const setCopied = useClipboard((s) => s.setCopied);
   const addHistory = useHistory((s) => s.add);
 
+  const [boot, setBoot] = useState<BootState>({ phase: "loading" });
+
   useEffect(() => {
     applyTheme(theme);
     if (theme === "auto") {
@@ -52,6 +63,25 @@ function App() {
       return () => mq.removeEventListener("change", cb);
     }
   }, [theme]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const status = await vault.status();
+        if (status.master_pw_enabled) {
+          setBoot({ phase: "unlock" });
+        } else {
+          await vault.unlock(null);
+          await useHistory.getState().hydrate();
+          const legacy = detectLegacyCount();
+          setBoot(legacy > 0 ? { phase: "migrate", count: legacy } : { phase: "ready" });
+        }
+      } catch (err) {
+        console.error("boot failed:", err);
+        setBoot({ phase: "ready" }); // fail-open to avoid bricking
+      }
+    })();
+  }, []);
 
   const regenerate = useCallback(async () => {
     try {
@@ -174,6 +204,39 @@ function App() {
     })();
     return () => { unlisten?.(); };
   }, [setCopied, addHistory, setPassword, setPassphrase]);
+
+  if (boot.phase === "loading") {
+    return <div className="boot-loading">Chargement…</div>;
+  }
+
+  if (boot.phase === "unlock") {
+    return (
+      <UnlockModal
+        onUnlocked={async () => {
+          await useHistory.getState().hydrate();
+          const legacy = detectLegacyCount();
+          setBoot(legacy > 0 ? { phase: "migrate", count: legacy } : { phase: "ready" });
+        }}
+        onForgotten={async () => {
+          if (!confirm("Effacer le coffre et perdre tout l'historique ?")) return;
+          try { await vault.clear(); } catch (e) { console.error("vault.clear failed:", e); }
+          setBoot({ phase: "ready" });
+        }}
+      />
+    );
+  }
+
+  if (boot.phase === "migrate") {
+    return (
+      <MigrationModal
+        count={boot.count}
+        onDone={async () => {
+          await useHistory.getState().hydrate();
+          setBoot({ phase: "ready" });
+        }}
+      />
+    );
+  }
 
   return (
     <main className="app">
