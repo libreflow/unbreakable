@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { vault, VaultStatus } from "../../utils/vault";
 import { isProtectionSupported } from "../../utils/windowProtection";
 import { useSettings } from "../../stores/settingsStore";
+import { useHistory } from "../../stores/historyStore";
 import type { PassphraseLang } from "../../types";
 
 export function SecuritySection() {
@@ -43,6 +44,7 @@ export function SecuritySection() {
     if (!confirm("EFFACER tout l'historique ? Cette action est irréversible.")) return;
     if (prompt("Tapez EFFACER pour confirmer") !== "EFFACER") return;
     await vault.clear();
+    useHistory.getState().clear();  // clear in-memory entries so debounced save can't re-populate
     await refresh();
   }
 

@@ -83,8 +83,18 @@ pub fn vault_set_master_password(state: State<'_, VaultState>, new_pw: Option<St
 }
 
 #[tauri::command]
-pub fn vault_clear(state: State<'_, VaultState>) -> Result<(), String> {
-    let mut guard = state.store.lock().unwrap();
-    let store = guard.as_mut().ok_or("vault not unlocked")?;
-    store.wipe().map_err(|e| e.to_string())
+pub fn vault_clear(app: AppHandle, state: State<'_, VaultState>) -> Result<(), String> {
+    let path = vault_path(&app)?;
+    // Wipe the vault file directly — no unlock required (physical access already
+    // implies the user can delete the data dir manually).
+    if path.exists() {
+        std::fs::remove_file(&path).map_err(|e| e.to_string())?;
+    }
+    // Wipe the keyring entry so a fresh KEK is created on next open.
+    if let Ok(entry) = keyring::Entry::new("com.unbreakable.app", "vault-kek") {
+        let _ = entry.delete_credential();
+    }
+    // Reset the in-memory store so subsequent vault_status / vault_unlock reflect the wipe.
+    *state.store.lock().unwrap() = None;
+    Ok(())
 }

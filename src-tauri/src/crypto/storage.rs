@@ -47,6 +47,7 @@ pub struct VaultStore {
     kek: Zeroizing<[u8; KEY_LEN]>,
     mpk: Option<Zeroizing<[u8; KEY_LEN]>>,
     master_pw_enabled: bool,
+    salt: [u8; SALT_LEN],
 }
 
 fn load_or_create_kek() -> Result<Zeroizing<[u8; KEY_LEN]>, VaultError> {
@@ -96,17 +97,19 @@ impl VaultStore {
     pub fn open(path: PathBuf, master_pw: Option<&str>) -> Result<Self, VaultError> {
         let kek = load_or_create_kek()?;
         let header = Self::peek_header(&path)?;
+
+        // Determine salt: read from existing file header, or generate a fresh one.
+        let salt: [u8; SALT_LEN] = match &header {
+            Some(h) => h.salt,
+            None => { let mut s = [0u8; SALT_LEN]; fill(&mut s)?; s }
+        };
+
         let (mpk, enabled) = match (master_pw, &header) {
-            (Some(pw), Some(h)) => (Some(derive_mpk(pw, &h.salt)?), true),
-            (Some(pw), None) => {
-                let mut salt = [0u8; SALT_LEN];
-                fill(&mut salt)?;
-                (Some(derive_mpk(pw, &salt)?), true)
-            }
+            (Some(pw), _) => (Some(derive_mpk(pw, &salt)?), true),
             (None, Some(h)) if h.master_pw_enabled => return Err(VaultError::DecryptFailed),
             (None, _) => (None, false),
         };
-        Ok(VaultStore { path, kek, mpk, master_pw_enabled: enabled })
+        Ok(VaultStore { path, kek, mpk, master_pw_enabled: enabled, salt })
     }
 
     pub fn is_master_password_enabled(&self) -> bool { self.master_pw_enabled }
@@ -143,10 +146,6 @@ impl VaultStore {
     }
 
     pub fn save(&mut self, entries: &[HistoryEntry]) -> Result<(), VaultError> {
-        let salt: [u8; SALT_LEN] = match Self::peek_header(&self.path)? {
-            Some(h) => h.salt,
-            None => { let mut s = [0u8; SALT_LEN]; fill(&mut s)?; s }
-        };
         let mut nonce_bytes = [0u8; NONCE_LEN];
         fill(&mut nonce_bytes)?;
 
@@ -160,7 +159,7 @@ impl VaultStore {
         out.extend_from_slice(MAGIC);
         out.push(VERSION);
         out.push(if self.master_pw_enabled { 0x01 } else { 0x00 });
-        out.extend_from_slice(&salt);
+        out.extend_from_slice(&self.salt);
         out.extend_from_slice(&nonce_bytes);
         out.extend_from_slice(&ciphertext);
 
@@ -183,13 +182,15 @@ impl VaultStore {
     pub fn rotate_master_password(&mut self, new_pw: Option<&str>) -> Result<(), VaultError> {
         let entries = self.load()?;
         if let Some(pw) = new_pw {
-            let mut salt = [0u8; SALT_LEN];
-            fill(&mut salt)?;
-            self.mpk = Some(derive_mpk(pw, &salt)?);
+            let mut new_salt = [0u8; SALT_LEN];
+            fill(&mut new_salt)?;
+            self.mpk = Some(derive_mpk(pw, &new_salt)?);
+            self.salt = new_salt;  // persist new salt so save() writes the correct one
             self.master_pw_enabled = true;
         } else {
             self.mpk = None;
             self.master_pw_enabled = false;
+            // self.salt unchanged — unused when mpk is None
         }
         self.save(&entries)
     }
