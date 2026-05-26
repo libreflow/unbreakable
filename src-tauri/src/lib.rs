@@ -11,7 +11,8 @@ use commands::clipboard::{
     cmd_clear_clipboard, cmd_clear_if_ours, cmd_copy_to_clipboard, cmd_read_clipboard,
     ClipboardState,
 };
-use commands::generate::{cmd_generate_pair, cmd_generate_passphrase, cmd_generate_password};
+use commands::generate::cmd_generate_password;
+// TODO Task 5: restore cmd_generate_passphrase and cmd_generate_pair after rewire
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
@@ -29,8 +30,7 @@ pub fn run() {
         .manage(ClipboardState::default())
         .invoke_handler(tauri::generate_handler![
             cmd_generate_password,
-            cmd_generate_passphrase,
-            cmd_generate_pair,
+            // TODO Task 5: restore cmd_generate_passphrase and cmd_generate_pair
             cmd_copy_to_clipboard,
             cmd_clear_clipboard,
             cmd_read_clipboard,

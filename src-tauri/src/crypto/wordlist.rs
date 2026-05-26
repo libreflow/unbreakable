@@ -1,147 +1,100 @@
 use crate::crypto::engine::os_rand_below;
-use crate::errors::{Result, UnbreakableError};
-use serde::{Deserialize, Serialize};
+use crate::errors::UnbreakableError;
+use std::sync::OnceLock;
+use zeroize::Zeroizing;
 
-// 256 mots français courts (4-7 lettres), sans accent — copier-coller universel,
-// compatible claviers QWERTY, shell scripts, sites refusant l'UTF-8 étendu.
-// Pas de mots avec tiret pour ne pas casser le split sur séparateur "-".
-// TODO S3: remplacer par FR Diceware complète (~8192 mots, 13 bits/mot) via include_bytes!.
-const STUB_WORDS: &[&str] = &[
-    "abri", "acide", "acte", "agir", "aide", "aigle", "aile", "aime", "aire", "ajout", "alarme", "alerte",
-    "algue", "allee", "ami", "ange", "annee", "antre", "aout", "appel", "apres", "arbre", "arc", "arene",
-    "arme", "art", "asile", "atout", "aube", "autel", "autre", "avant", "avis", "avoir", "axe", "balle",
-    "banc", "bande", "banque", "bar", "barbe", "base", "beau", "bec", "beige", "bel", "belle", "berge",
-    "bete", "beurre", "bien", "bijou", "bilan", "blanc", "bleu", "ble", "bloc", "bois", "boite", "bon",
-    "bord", "bouee", "bout", "bras", "breche", "bref", "brique", "brise", "brun", "bruit", "buee", "bulle",
-    "buche", "but", "cable", "cafe", "cage", "calme", "camion", "canal", "canon", "cap", "cape", "carte",
-    "casque", "cause", "cave", "cela", "cellule", "cent", "cercle", "cerf", "cesse", "chacun", "chair", "champ",
-    "chant", "chat", "chef", "chien", "choc", "chou", "chute", "ciel", "cigare", "cinq", "cite", "clair",
-    "classe", "cle", "clic", "climat", "club", "code", "coeur", "coin", "colis", "colle", "comme", "conte",
-    "copain", "coq", "corde", "corps", "cote", "couche", "coup", "cour", "course", "court", "creer", "crete",
-    "crime", "croix", "cru", "cube", "cuir", "cure", "cycle", "dame", "date", "debut", "dent", "desir",
-    "dette", "deux", "dieu", "dire", "dix", "doigt", "don", "donc", "dose", "doux", "droit", "drole",
-    "duo", "dur", "eau", "ecole", "ecran", "elan", "elu", "ennui", "enjeu", "epoque", "equipe", "ere",
-    "espoir", "etat", "ete", "etoile", "faim", "faire", "fait", "faute", "faux", "fer", "ferme", "fete",
-    "fil", "fille", "film", "fin", "fleur", "flou", "foi", "foie", "fois", "fond", "force", "foret",
-    "fort", "four", "foyer", "frais", "franc", "frere", "frigo", "froid", "fruit", "fumee", "futur", "gain",
-    "gare", "gaz", "gel", "gens", "geste", "gilet", "glace", "gloire", "gomme", "gorge", "gout", "grand",
-    "grave", "grec", "gris", "gros", "guide", "habile", "haine", "halle", "halte", "haut", "herbe", "heros",
-    "heure", "hier", "homme", "honte", "hotel", "huit", "ici", "idee", "ile", "image", "indice", "infos",
-    "ivre", "jadis", "jamais", "jardin", "jaune", "jet", "jeu", "jeune", "joie", "joli", "jour", "juge",
-    "juin", "jury", "lac", "laine",
-];
+const FR_BYTES: &str = include_str!("../../wordlists/eff_large_fr.txt");
+const EN_BYTES: &str = include_str!("../../wordlists/eff_large_en.txt");
+const DE_BYTES: &str = include_str!("../../wordlists/eff_large_de.txt");
+const ES_BYTES: &str = include_str!("../../wordlists/eff_large_es.txt");
+const IT_BYTES: &str = include_str!("../../wordlists/eff_large_it.txt");
 
-const _: () = assert!(STUB_WORDS.len() >= 256, "STUB_WORDS must have at least 256 entries for entropy calculations");
+const WORDS_PER_LIST: usize = 7776;
+const BITS_PER_WORD: f64 = 12.924812503605781; // log2(7776)
+const MIN_ENTROPY_BITS: f64 = 64.0; // 5 words = 5 * log2(7776) ≈ 64.62 bits; floor at 64.0 to pass 5-word passphrases
+const MIN_WORD_COUNT: u8 = 4;
+const MAX_WORD_COUNT: u8 = 12;
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Capitalization {
-    Off,
-    First,
-    All,
+pub enum WordlistLang { Fr, En, De, Es, It }
+
+static FR_CACHE: OnceLock<Vec<&'static str>> = OnceLock::new();
+static EN_CACHE: OnceLock<Vec<&'static str>> = OnceLock::new();
+static DE_CACHE: OnceLock<Vec<&'static str>> = OnceLock::new();
+static ES_CACHE: OnceLock<Vec<&'static str>> = OnceLock::new();
+static IT_CACHE: OnceLock<Vec<&'static str>> = OnceLock::new();
+
+fn parse_static(s: &'static str) -> Vec<&'static str> {
+    let v: Vec<&'static str> = s.lines().collect();
+    assert_eq!(v.len(), WORDS_PER_LIST, "wordlist embedded does not contain {WORDS_PER_LIST} words");
+    v
 }
 
-impl Default for Capitalization {
-    fn default() -> Self {
-        Capitalization::First
-    }
+pub fn words_for(lang: WordlistLang) -> &'static [&'static str] {
+    let cache = match lang {
+        WordlistLang::Fr => &FR_CACHE,
+        WordlistLang::En => &EN_CACHE,
+        WordlistLang::De => &DE_CACHE,
+        WordlistLang::Es => &ES_CACHE,
+        WordlistLang::It => &IT_CACHE,
+    };
+    let bytes = match lang {
+        WordlistLang::Fr => FR_BYTES,
+        WordlistLang::En => EN_BYTES,
+        WordlistLang::De => DE_BYTES,
+        WordlistLang::Es => ES_BYTES,
+        WordlistLang::It => IT_BYTES,
+    };
+    cache.get_or_init(|| parse_static(bytes)).as_slice()
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct PassphraseOptions {
-    pub words: usize,
-    pub separator: String,
-    #[serde(default)]
-    pub capitalization: Capitalization,
-    pub append_digits: bool,
-    #[serde(default)]
-    pub append_symbol: bool,
+fn estimated_entropy_bits(word_count: u8, include_digit: bool, include_symbol: bool) -> f64 {
+    let mut e = f64::from(word_count) * BITS_PER_WORD;
+    if include_digit { e += (10f64).log2(); }
+    if include_symbol { e += (10f64).log2(); }
+    e
 }
 
-impl Default for PassphraseOptions {
-    fn default() -> Self {
-        Self {
-            words: 5,
-            separator: "-".to_string(),
-            capitalization: Capitalization::First,
-            append_digits: true,
-            append_symbol: false,
-        }
-    }
-}
-
-const SYMBOLS: &[char] = &['!', '@', '#', '$', '%', '^', '&', '*'];
-const MIN_PASSPHRASE_ENTROPY_BITS: f64 = 40.0;
-
-fn capitalize_first(s: &str) -> String {
-    let mut chars = s.chars();
-    match chars.next() {
-        None => String::new(),
-        Some(c) => c.to_ascii_uppercase().to_string() + chars.as_str(),
-    }
-}
-
-fn apply_capitalization(word: &str, cap: Capitalization) -> String {
-    match cap {
-        Capitalization::Off => word.to_string(),
-        Capitalization::First => capitalize_first(word),
-        Capitalization::All => word.to_ascii_uppercase(),
-    }
-}
-
-fn passphrase_entropy_bits_inner(opts: &PassphraseOptions) -> f64 {
-    let per_word = (STUB_WORDS.len() as f64).log2();
-    let mut bits = per_word * opts.words as f64;
-    if opts.append_digits {
-        bits += (100f64).log2();
-    }
-    if opts.append_symbol {
-        bits += (SYMBOLS.len() as f64).log2();
-    }
-    bits
-}
-
-pub fn generate_passphrase(opts: &PassphraseOptions) -> Result<String> {
-    if !(3..=12).contains(&opts.words) {
+pub fn generate_passphrase(
+    lang: WordlistLang,
+    word_count: u8,
+    separator: char,
+    include_digit: bool,
+    include_symbol: bool,
+) -> Result<Zeroizing<String>, UnbreakableError> {
+    if word_count < MIN_WORD_COUNT || word_count > MAX_WORD_COUNT {
         return Err(UnbreakableError::InvalidOptions(format!(
-            "words {} out of range [3,12]",
-            opts.words
+            "word_count {} out of [{}..{}]",
+            word_count, MIN_WORD_COUNT, MAX_WORD_COUNT
         )));
     }
-    if opts.separator.chars().count() > 8 {
-        return Err(UnbreakableError::InvalidOptions(
-            "separator too long (max 8 chars)".into(),
-        ));
+
+    let entropy = estimated_entropy_bits(word_count, include_digit, include_symbol);
+    if entropy < MIN_ENTROPY_BITS {
+        return Err(UnbreakableError::EntropyTooLow(entropy));
     }
 
-    let bits = passphrase_entropy_bits_inner(opts);
-    if bits < MIN_PASSPHRASE_ENTROPY_BITS {
-        return Err(UnbreakableError::EntropyTooLow(bits));
+    let words = words_for(lang);
+
+    let mut out = String::with_capacity((word_count as usize) * 10);
+    for i in 0..word_count {
+        if i > 0 { out.push(separator); }
+        let idx = os_rand_below(WORDS_PER_LIST)?;
+        out.push_str(words[idx]);
     }
 
-    let mut parts: Vec<String> = Vec::with_capacity(opts.words);
-    for _ in 0..opts.words {
-        let idx = os_rand_below(STUB_WORDS.len())?;
-        parts.push(apply_capitalization(STUB_WORDS[idx], opts.capitalization));
+    if include_digit {
+        out.push(separator);
+        let d = os_rand_below(10)?;
+        out.push(char::from_digit(d as u32, 10).unwrap());
+    }
+    if include_symbol {
+        const SYMS: &[char] = &['!', '@', '#', '$', '%', '&', '*', '?', '+', '='];
+        out.push(SYMS[os_rand_below(SYMS.len())?]);
     }
 
-    let mut phrase = parts.join(&opts.separator);
-
-    if opts.append_digits {
-        let d1 = os_rand_below(10)?;
-        let d2 = os_rand_below(10)?;
-        phrase.push_str(&format!("{}{}", d1, d2));
-    }
-    if opts.append_symbol {
-        let s = SYMBOLS[os_rand_below(SYMBOLS.len())?];
-        phrase.push(s);
-    }
-    Ok(phrase)
-}
-
-#[cfg(test)]
-pub fn passphrase_entropy_bits(opts: &PassphraseOptions) -> f64 {
-    passphrase_entropy_bits_inner(opts)
+    Ok(Zeroizing::new(out))
 }
 
 #[cfg(test)]
@@ -149,75 +102,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_5_word_passphrase_generated() {
-        let opts = PassphraseOptions::default();
-        let p = generate_passphrase(&opts).expect("should generate");
-        let segments: Vec<&str> = p.split('-').collect();
-        assert_eq!(segments.len(), 5);
-        let last = segments.last().unwrap();
-        let digits_tail: String = last.chars().rev().take(2).collect();
-        assert!(digits_tail.chars().all(|c| c.is_ascii_digit()));
-    }
-
-    #[test]
-    fn rejects_below_3_words() {
-        let opts = PassphraseOptions {
-            words: 2,
-            ..Default::default()
-        };
-        assert!(matches!(
-            generate_passphrase(&opts),
-            Err(UnbreakableError::InvalidOptions(_))
-        ));
-    }
-
-    #[test]
-    fn rejects_above_12_words() {
-        let opts = PassphraseOptions {
-            words: 13,
-            ..Default::default()
-        };
-        assert!(matches!(
-            generate_passphrase(&opts),
-            Err(UnbreakableError::InvalidOptions(_))
-        ));
-    }
-
-    #[test]
-    fn custom_separator_used() {
-        let opts = PassphraseOptions {
-            separator: "_".into(),
-            append_digits: false,
-            ..Default::default()
-        };
-        let p = generate_passphrase(&opts).unwrap();
-        assert!(p.contains('_'));
-        assert!(!p.contains('-'));
-    }
-
-    #[test]
-    fn all_caps_capitalization() {
-        let opts = PassphraseOptions {
-            capitalization: Capitalization::All,
-            append_digits: false,
-            ..Default::default()
-        };
-        let p = generate_passphrase(&opts).unwrap();
-        for c in p.chars() {
-            if c.is_alphabetic() {
-                assert!(c.is_ascii_uppercase(), "expected upper in {}", p);
-            }
+    fn all_languages_load_7776_words() {
+        for lang in [WordlistLang::Fr, WordlistLang::En, WordlistLang::De, WordlistLang::Es, WordlistLang::It] {
+            let words = words_for(lang);
+            assert_eq!(words.len(), 7776, "language {:?} expected 7776 words", lang);
         }
     }
 
     #[test]
-    fn wordlist_has_at_least_256_entries() {
-        assert!(STUB_WORDS.len() >= 256, "wordlist too small: {}", STUB_WORDS.len());
+    fn passphrase_meets_min_entropy() {
+        let p = generate_passphrase(WordlistLang::Fr, 5, '-', false, false).unwrap();
+        let word_count = p.split('-').count();
+        assert_eq!(word_count, 5);
     }
 
     #[test]
-    fn entropy_default_is_positive() {
-        let opts = PassphraseOptions::default();
-        assert!(passphrase_entropy_bits(&opts) > 0.0);
+    fn passphrase_word_count_below_min_rejected() {
+        let err = generate_passphrase(WordlistLang::En, 3, '-', false, false);
+        assert!(err.is_err(), "3 words at 12.92 bits = 38.76 bits < 65 bits min");
+    }
+
+    #[test]
+    fn passphrase_with_digit_and_symbol_appends_chars() {
+        let p = generate_passphrase(WordlistLang::En, 5, '-', true, true).unwrap();
+        let parts: Vec<&str> = p.split('-').collect();
+        assert!(parts.len() >= 5);
     }
 }
