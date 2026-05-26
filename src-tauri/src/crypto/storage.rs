@@ -123,4 +123,74 @@ impl VaultStore {
         salt.copy_from_slice(&buf[6..6+SALT_LEN]);
         Ok(Some(VaultHeader { master_pw_enabled: (flags & 0x01) != 0, salt }))
     }
+
+    pub fn load(&self) -> Result<Vec<HistoryEntry>, VaultError> {
+        if !self.path.exists() { return Ok(Vec::new()); }
+        let buf = std::fs::read(&self.path)?;
+        let header_len = 4 + 1 + 1 + SALT_LEN + NONCE_LEN;
+        if buf.len() < header_len + TAG_LEN { return Err(VaultError::FormatMismatch); }
+        if &buf[0..4] != MAGIC || buf[4] != VERSION { return Err(VaultError::FormatMismatch); }
+
+        let nonce_bytes = &buf[6+SALT_LEN .. 6+SALT_LEN+NONCE_LEN];
+        let ciphertext = &buf[header_len..];
+
+        let dek = derive_dek(&self.kek[..], self.mpk.as_deref().map(|m| &m[..]));
+        let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&dek[..]));
+        let nonce = Nonce::from_slice(nonce_bytes);
+        let plaintext = cipher.decrypt(nonce, ciphertext).map_err(|_| VaultError::DecryptFailed)?;
+        let entries: Vec<HistoryEntry> = serde_json::from_slice(&plaintext)?;
+        Ok(entries)
+    }
+
+    pub fn save(&mut self, entries: &[HistoryEntry]) -> Result<(), VaultError> {
+        let salt: [u8; SALT_LEN] = match Self::peek_header(&self.path)? {
+            Some(h) => h.salt,
+            None => { let mut s = [0u8; SALT_LEN]; fill(&mut s)?; s }
+        };
+        let mut nonce_bytes = [0u8; NONCE_LEN];
+        fill(&mut nonce_bytes)?;
+
+        let dek = derive_dek(&self.kek[..], self.mpk.as_deref().map(|m| &m[..]));
+        let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&dek[..]));
+        let nonce = Nonce::from_slice(&nonce_bytes);
+        let plaintext = serde_json::to_vec(entries)?;
+        let ciphertext = cipher.encrypt(nonce, plaintext.as_ref()).map_err(|_| VaultError::DecryptFailed)?;
+
+        let mut out = Vec::with_capacity(6 + SALT_LEN + NONCE_LEN + ciphertext.len());
+        out.extend_from_slice(MAGIC);
+        out.push(VERSION);
+        out.push(if self.master_pw_enabled { 0x01 } else { 0x00 });
+        out.extend_from_slice(&salt);
+        out.extend_from_slice(&nonce_bytes);
+        out.extend_from_slice(&ciphertext);
+
+        let dir = self.path.parent().ok_or_else(|| VaultError::Io(std::io::Error::new(std::io::ErrorKind::Other, "no parent dir")))?;
+        std::fs::create_dir_all(dir)?;
+        let mut tmp = tempfile::NamedTempFile::new_in(dir)?;
+        tmp.write_all(&out)?;
+        tmp.flush()?;
+        tmp.persist(&self.path).map_err(|e| VaultError::Io(e.error))?;
+        Ok(())
+    }
+
+    pub fn wipe(&mut self) -> Result<(), VaultError> {
+        if self.path.exists() { std::fs::remove_file(&self.path)?; }
+        let entry = KeyringEntry::new(KEYRING_SERVICE, KEYRING_USER)?;
+        let _ = entry.delete_credential();
+        Ok(())
+    }
+
+    pub fn rotate_master_password(&mut self, new_pw: Option<&str>) -> Result<(), VaultError> {
+        let entries = self.load()?;
+        if let Some(pw) = new_pw {
+            let mut salt = [0u8; SALT_LEN];
+            fill(&mut salt)?;
+            self.mpk = Some(derive_mpk(pw, &salt)?);
+            self.master_pw_enabled = true;
+        } else {
+            self.mpk = None;
+            self.master_pw_enabled = false;
+        }
+        self.save(&entries)
+    }
 }
