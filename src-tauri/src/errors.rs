@@ -9,7 +9,7 @@ pub enum UnbreakableError {
     #[error("invalid password options: {0}")]
     InvalidOptions(String),
 
-    #[error("entropy below 80 bits ({0:.2})")]
+    #[error("entropy below required threshold ({0:.2} bits)")]
     EntropyTooLow(f64),
 
     #[error("generation exceeded max attempts ({0})")]
