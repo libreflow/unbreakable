@@ -3,15 +3,15 @@ import { useHistory } from "../../stores/historyStore";
 import { useClipboard } from "../../stores/clipboardStore";
 import { useSettings } from "../../stores/settingsStore";
 import { copyToClipboard } from "../../utils/tauriCommands";
-import { HistoryEntry } from "../../types";
+import { HistoryEntry } from "../../utils/vault";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
 
-function formatDate(ms: number): string {
-  return new Date(ms).toLocaleString();
+function formatDate(ts: string | number): string {
+  return new Date(ts).toLocaleString();
 }
 
 export function History({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { entries, remove, clear } = useHistory();
+  const { entries, remove, clear, hydrated } = useHistory();
   const setCopied = useClipboard((s) => s.setCopied);
   const ttl = useSettings((s) => s.ttl_seconds);
   const [revealed, setRevealed] = useState<Record<string, string>>({});
@@ -61,7 +61,9 @@ export function History({ open, onClose }: { open: boolean; onClose: () => void 
         </div>
       </header>
       <div className="flyout-body">
-        {entries.length === 0 ? (
+        {!hydrated ? (
+          <p className="placeholder">Chargement…</p>
+        ) : entries.length === 0 ? (
           <p className="placeholder">Aucun secret généré pour le moment.</p>
         ) : (
           <ul className="history-list">

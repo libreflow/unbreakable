@@ -21,15 +21,6 @@ export interface PassphraseOptions {
 export type CopiedPanel = "password" | "passphrase";
 export type ClipboardStatus = "copied" | "expired" | "modified" | "idle";
 
-export interface HistoryEntry {
-  id: string;
-  kind: CopiedPanel;
-  value: string;
-  label?: string;
-  score: number;
-  created_at: number;
-}
-
 export interface AppSettings {
   default_copy: CopiedPanel;
   ttl_seconds: number;
