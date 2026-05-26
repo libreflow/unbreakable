@@ -12,6 +12,7 @@ use commands::clipboard::{
     cmd_clear_clipboard, cmd_clear_if_ours, cmd_copy_to_clipboard, cmd_read_clipboard,
     ClipboardState,
 };
+use commands::history::VaultState;
 use commands::generate::{cmd_generate_password, cmd_generate_passphrase, cmd_generate_pair};
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_clipboard_manager::ClipboardExt;
@@ -28,6 +29,7 @@ pub fn run() {
         ))
         .plugin(tauri_plugin_notification::init())
         .manage(ClipboardState::default())
+        .manage(VaultState::default())
         .invoke_handler(tauri::generate_handler![
             cmd_generate_password,
             cmd_generate_passphrase,
@@ -48,6 +50,12 @@ pub fn run() {
             resident_commands::set_tray_active,
             commands::window::cmd_set_window_protected,
             commands::window::cmd_protection_supported,
+            commands::history::vault_status,
+            commands::history::vault_unlock,
+            commands::history::vault_load,
+            commands::history::vault_save,
+            commands::history::vault_set_master_password,
+            commands::history::vault_clear,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { .. } = event {
