@@ -46,6 +46,8 @@ pub fn run() {
             resident_commands::notify_copied,
             resident_commands::notify_clipboard_cleared,
             resident_commands::set_tray_active,
+            commands::window::cmd_set_window_protected,
+            commands::window::cmd_protection_supported,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { .. } = event {
