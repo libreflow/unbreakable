@@ -16,13 +16,11 @@ export function PasswordPanel() {
   const [hidden, setHidden] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // Anti-screenshot: protect window when password is visible (hidden === false)
+  // Anti-screenshot: keep the main window protected while this panel is
+  // mounted. PassphrasePanel renders the passphrase in plaintext beside
+  // us, so unprotecting on `hidden` would leak that secret to screenshots.
   useEffect(() => {
-    setWindowProtected("main", !hidden).catch(() => {});
-  }, [hidden]);
-
-  // Safety net: always unprotect when panel unmounts
-  useEffect(() => {
+    setWindowProtected("main", true).catch(() => {});
     return () => { setWindowProtected("main", false).catch(() => {}); };
   }, []);
 
