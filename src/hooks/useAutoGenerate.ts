@@ -3,7 +3,7 @@ import { useGenerator } from "../stores/generatorStore";
 import { useClipboard } from "../stores/clipboardStore";
 import { useSettings } from "../stores/settingsStore";
 import { useHistory } from "../stores/historyStore";
-import { clearIfOurs, copyToClipboard, generatePair } from "../utils/tauriCommands";
+import { clearIfOurs, copyToClipboard, generatePairFromOpts } from "../utils/tauriCommands";
 import { analyzeStrength } from "../utils/strength";
 
 export function useAutoGenerate() {
@@ -19,7 +19,8 @@ export function useAutoGenerate() {
     ranRef.current = true;
     (async () => {
       try {
-        const [pwd, phrase] = await generatePair(pwdOpts, phraseOpts);
+        const lang = useSettings.getState().passphrase_lang;
+        const [pwd, phrase] = await generatePairFromOpts(pwdOpts, phraseOpts, lang);
         setPassword(pwd);
         setPassphrase(phrase);
         if (auto_copy_on_open) {

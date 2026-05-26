@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { AppSettings, DEFAULT_SETTINGS } from "../types";
+import { AppSettings, DEFAULT_SETTINGS, PassphraseLang } from "../types";
+
+const detectLang = (): PassphraseLang => {
+  if (typeof navigator === "undefined") return "en";
+  const code = navigator.language.slice(0, 2).toLowerCase();
+  return (["fr", "en", "de", "es", "it"] as const).find((l) => l === code) ?? "en";
+};
 
 interface SettingsState extends AppSettings {
   set: (patch: Partial<AppSettings>) => void;
@@ -11,8 +17,9 @@ export const useSettings = create<SettingsState>()(
   persist(
     (set) => ({
       ...DEFAULT_SETTINGS,
+      passphrase_lang: detectLang(),
       set: (patch) => set(patch),
-      reset: () => set(DEFAULT_SETTINGS),
+      reset: () => set({ ...DEFAULT_SETTINGS, passphrase_lang: detectLang() }),
     }),
     {
       name: "unbreakable.settings",
@@ -27,6 +34,7 @@ export const useSettings = create<SettingsState>()(
           shortcut_enabled: old.shortcut_enabled ?? false,
           shortcut_combo: old.shortcut_combo ?? "CommandOrControl+Alt+P",
           notifications_enabled: old.notifications_enabled ?? false,
+          passphrase_lang: (old.passphrase_lang as PassphraseLang | undefined) ?? detectLang(),
         } as never;
       },
     },

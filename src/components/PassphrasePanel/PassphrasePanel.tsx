@@ -3,7 +3,7 @@ import { useGenerator } from "../../stores/generatorStore";
 import { useClipboard } from "../../stores/clipboardStore";
 import { useSettings } from "../../stores/settingsStore";
 import { useHistory } from "../../stores/historyStore";
-import { copyToClipboard, generatePassphrase } from "../../utils/tauriCommands";
+import { copyToClipboard, generatePassphraseFromOpts } from "../../utils/tauriCommands";
 import { analyzeStrength } from "../../utils/strength";
 import { StrengthMeter } from "../StrengthMeter/StrengthMeter";
 
@@ -19,7 +19,8 @@ export function PassphrasePanel() {
   const regenerate = async () => {
     setErr(null);
     try {
-      const p = await generatePassphrase(phraseOpts);
+      const lang = useSettings.getState().passphrase_lang;
+      const p = await generatePassphraseFromOpts(phraseOpts, lang);
       setPassphrase(p);
     } catch (e) {
       setErr(String(e));
@@ -36,7 +37,9 @@ export function PassphrasePanel() {
   const sep = phraseOpts.separator;
   const { words, tail } = useMemo(() => {
     if (!passphrase) return { words: [] as string[], tail: "" };
-    const m = passphrase.match(/^(.*?)(\d{1,2}[!@#$%^&*]?)?$/);
+    // New backend format: word1-word2-...-wordN[-digit][symbol]
+    // A trailing symbol (from SYMS) has no separator before it.
+    const m = passphrase.match(/^(.*?)([!@#$%&*?+=])?$/);
     const body = m?.[1] ?? passphrase;
     const tail = m?.[2] ?? "";
     return { words: body.split(sep).filter(Boolean), tail };

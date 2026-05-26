@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useSettings } from "../../stores/settingsStore";
 import { useGenerator } from "../../stores/generatorStore";
-import { copyToClipboard, generatePassword, generatePassphrase } from "../../utils/tauriCommands";
+import { copyToClipboard, generatePassword, generatePassphraseFromOpts } from "../../utils/tauriCommands";
 import { analyzeStrength } from "../../utils/strength";
 import { emitSecretCopied } from "../../utils/crossWindowEvents";
 import { notifyCopied, showMainWindow } from "../../utils/residentCommands";
@@ -23,7 +23,7 @@ export function QuickPop() {
     try {
       const s = defaultKind === "password"
         ? await generatePassword(pwdOpts)
-        : await generatePassphrase(phraseOpts);
+        : await generatePassphraseFromOpts(phraseOpts, useSettings.getState().passphrase_lang);
       // Ignore stale responses if a newer regenerate was requested.
       if (myReq !== reqIdRef.current) return;
       setSecret(s);

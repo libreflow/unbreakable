@@ -9,14 +9,13 @@ export interface PasswordOptions {
   exclude_chars: string;
 }
 
-export type Capitalization = "off" | "first" | "all";
+export type PassphraseLang = "fr" | "en" | "de" | "es" | "it";
 
 export interface PassphraseOptions {
-  words: number;
-  separator: string;
-  capitalization: Capitalization;
-  append_digits: boolean;
-  append_symbol: boolean;
+  words: number;          // 4-12
+  separator: string;      // single char
+  include_digit: boolean;
+  include_symbol: boolean;
 }
 
 export type CopiedPanel = "password" | "passphrase";
@@ -42,6 +41,7 @@ export interface AppSettings {
   shortcut_enabled: boolean;
   shortcut_combo: string;
   notifications_enabled: boolean;
+  passphrase_lang: PassphraseLang;
 }
 
 export const DEFAULT_PASSWORD_OPTS: PasswordOptions = {
@@ -58,9 +58,8 @@ export const DEFAULT_PASSWORD_OPTS: PasswordOptions = {
 export const DEFAULT_PASSPHRASE_OPTS: PassphraseOptions = {
   words: 5,
   separator: "-",
-  capitalization: "first",
-  append_digits: true,
-  append_symbol: false,
+  include_digit: true,
+  include_symbol: false,
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -74,4 +73,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   shortcut_enabled: false,
   shortcut_combo: "CommandOrControl+Alt+P",
   notifications_enabled: false,
+  passphrase_lang: "en",
 };

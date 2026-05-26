@@ -3,6 +3,7 @@ import { useSettings } from "../../stores/settingsStore";
 import { useGenerator } from "../../stores/generatorStore";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
 import { ResidentModeSection } from "./ResidentModeSection";
+import type { PassphraseLang } from "../../types";
 
 export function Settings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const s = useSettings();
@@ -67,9 +68,18 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
 
         <section>
           <h3>Passphrase</h3>
+          <label>Langue
+            <select value={s.passphrase_lang} onChange={(e) => s.set({ passphrase_lang: e.target.value as PassphraseLang })}>
+              <option value="en">EN — English</option>
+              <option value="fr">FR — Français</option>
+              <option value="de">DE — Deutsch</option>
+              <option value="es">ES — Español</option>
+              <option value="it">IT — Italiano</option>
+            </select>
+          </label>
           <label>Nombre de mots : {phraseOpts.words}
             <input
-              type="range" min={3} max={12} value={phraseOpts.words}
+              type="range" min={4} max={12} value={phraseOpts.words}
               aria-label="Nombre de mots de la passphrase"
               aria-valuetext={`${phraseOpts.words} mots`}
               onChange={(e) => setPhraseOpts({ words: Number(e.target.value) })}
@@ -78,15 +88,8 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
           <label>Séparateur
             <input type="text" maxLength={4} value={phraseOpts.separator} onChange={(e) => setPhraseOpts({ separator: e.target.value })} />
           </label>
-          <label>Capitalisation
-            <select value={phraseOpts.capitalization} onChange={(e) => setPhraseOpts({ capitalization: e.target.value as "off" | "first" | "all" })}>
-              <option value="off">Aucune</option>
-              <option value="first">Première lettre</option>
-              <option value="all">Tout en majuscules</option>
-            </select>
-          </label>
-          <label className="check"><input type="checkbox" checked={phraseOpts.append_digits} onChange={(e) => setPhraseOpts({ append_digits: e.target.checked })} /> Ajouter 2 chiffres</label>
-          <label className="check"><input type="checkbox" checked={phraseOpts.append_symbol} onChange={(e) => setPhraseOpts({ append_symbol: e.target.checked })} /> Ajouter 1 symbole</label>
+          <label className="check"><input type="checkbox" checked={phraseOpts.include_digit} onChange={(e) => setPhraseOpts({ include_digit: e.target.checked })} /> Ajouter 1 chiffre</label>
+          <label className="check"><input type="checkbox" checked={phraseOpts.include_symbol} onChange={(e) => setPhraseOpts({ include_symbol: e.target.checked })} /> Ajouter 1 symbole</label>
         </section>
 
         <ResidentModeSection />

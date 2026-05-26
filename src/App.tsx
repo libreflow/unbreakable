@@ -14,7 +14,7 @@ import { useSettings } from "./stores/settingsStore";
 import { useHistory } from "./stores/historyStore";
 import {
   copyToClipboard,
-  generatePassphrase,
+  generatePassphraseFromOpts,
   generatePassword,
 } from "./utils/tauriCommands";
 import { analyzeStrength } from "./utils/strength";
@@ -55,9 +55,10 @@ function App() {
 
   const regenerate = useCallback(async () => {
     try {
+      const lang = useSettings.getState().passphrase_lang;
       const [p, ph] = await Promise.all([
         generatePassword(pwdOpts),
-        generatePassphrase(phraseOpts),
+        generatePassphraseFromOpts(phraseOpts, lang),
       ]);
       setPassword(p);
       setPassphrase(ph);
@@ -157,7 +158,7 @@ function App() {
           const opts = useGenerator.getState();
           const secret = kind === "password"
             ? await generatePassword(opts.pwdOpts)
-            : await generatePassphrase(opts.phraseOpts);
+            : await generatePassphraseFromOpts(opts.phraseOpts, useSettings.getState().passphrase_lang);
           if (kind === "password") setPassword(secret);
           else setPassphrase(secret);
           await copyToClipboard(secret);
