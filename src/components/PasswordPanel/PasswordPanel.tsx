@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGenerator } from "../../stores/generatorStore";
 import { useClipboard } from "../../stores/clipboardStore";
 import { useSettings } from "../../stores/settingsStore";
@@ -6,6 +6,7 @@ import { useHistory } from "../../stores/historyStore";
 import { copyToClipboard, generatePassword } from "../../utils/tauriCommands";
 import { analyzeStrength } from "../../utils/strength";
 import { StrengthMeter } from "../StrengthMeter/StrengthMeter";
+import { setWindowProtected } from "../../utils/windowProtection";
 
 export function PasswordPanel() {
   const { password, setPassword, pwdOpts } = useGenerator();
@@ -14,6 +15,16 @@ export function PasswordPanel() {
   const addHistory = useHistory((s) => s.add);
   const [hidden, setHidden] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Anti-screenshot: protect window when password is visible (hidden === false)
+  useEffect(() => {
+    setWindowProtected("main", !hidden).catch(() => {});
+  }, [hidden]);
+
+  // Safety net: always unprotect when panel unmounts
+  useEffect(() => {
+    return () => { setWindowProtected("main", false).catch(() => {}); };
+  }, []);
 
   const score = useMemo(() => analyzeStrength(password).score, [password]);
 

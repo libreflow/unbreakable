@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGenerator } from "../../stores/generatorStore";
 import { useClipboard } from "../../stores/clipboardStore";
 import { useSettings } from "../../stores/settingsStore";
@@ -6,6 +6,7 @@ import { useHistory } from "../../stores/historyStore";
 import { copyToClipboard, generatePassphraseFromOpts } from "../../utils/tauriCommands";
 import { analyzeStrength } from "../../utils/strength";
 import { StrengthMeter } from "../StrengthMeter/StrengthMeter";
+import { setWindowProtected } from "../../utils/windowProtection";
 
 export function PassphrasePanel() {
   const { passphrase, setPassphrase, phraseOpts } = useGenerator();
@@ -13,6 +14,12 @@ export function PassphrasePanel() {
   const ttl = useSettings((s) => s.ttl_seconds);
   const addHistory = useHistory((s) => s.add);
   const [err, setErr] = useState<string | null>(null);
+
+  // Anti-screenshot: passphrase is always visible, so protect at mount and unprotect at unmount
+  useEffect(() => {
+    setWindowProtected("main", true).catch(() => {});
+    return () => { setWindowProtected("main", false).catch(() => {}); };
+  }, []);
 
   const score = useMemo(() => analyzeStrength(passphrase).score, [passphrase]);
 
