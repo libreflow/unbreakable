@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSettings } from "../../stores/settingsStore";
 import {
   enableTray,
@@ -10,6 +10,8 @@ import {
 export function ResidentModeSection() {
   const s = useSettings();
   const [comboError, setComboError] = useState<string | null>(null);
+  const [comboDraft, setComboDraft] = useState<string>(s.shortcut_combo);
+  useEffect(() => setComboDraft(s.shortcut_combo), [s.shortcut_combo]);
   const lastAppliedComboRef = useRef<string>(s.shortcut_combo);
 
   const onTray = async (enabled: boolean) => {
@@ -32,17 +34,24 @@ export function ResidentModeSection() {
       setComboError(null);
     } catch (e) { console.error(e); s.set({ shortcut_enabled: !enabled }); setComboError(String(e)); }
   };
-  const onCombo = (combo: string) => s.set({ shortcut_combo: combo });
-  // Re-register OS-side when the user commits a new combo while the shortcut is enabled.
+  // P3: the combo field keeps a local draft so each keystroke only updates
+  // the input — no persist write, no cross-window IPC emit. The settings store
+  // (and OS shortcut re-registration) is only touched when the user commits.
+  const onCombo = (combo: string) => setComboDraft(combo);
   const onComboCommit = async () => {
+    const combo = comboDraft.trim() || s.shortcut_combo;
+    setComboDraft(combo);
+    if (combo === s.shortcut_combo) return;
+    s.set({ shortcut_combo: combo });
     if (!s.shortcut_enabled) return;
-    if (s.shortcut_combo === lastAppliedComboRef.current) return;
+    if (combo === lastAppliedComboRef.current) return;
     try {
-      await registerShortcut(s.shortcut_combo);
-      lastAppliedComboRef.current = s.shortcut_combo;
+      await registerShortcut(combo);
+      lastAppliedComboRef.current = combo;
       setComboError(null);
     } catch (e) {
       s.set({ shortcut_combo: lastAppliedComboRef.current });
+      setComboDraft(lastAppliedComboRef.current);
       setComboError(String(e));
     }
   };
@@ -66,7 +75,7 @@ export function ResidentModeSection() {
       <label>Combinaison
         <input
           type="text"
-          value={s.shortcut_combo}
+          value={comboDraft}
           onChange={(e) => onCombo(e.target.value)}
           onBlur={onComboCommit}
           onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}

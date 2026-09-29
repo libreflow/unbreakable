@@ -1,21 +1,25 @@
 use crate::crypto::storage::{HistoryEntry, VaultStore, KEYRING_SERVICE, KEYRING_USER};
 use serde::Serialize;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
 pub struct VaultState {
     pub store: Mutex<Option<VaultStore>>,
+    // P4: entry count tracked in memory so vault_status never re-decrypts the
+    // whole vault just to display a number.
+    pub entry_count: AtomicU32,
 }
 
 impl Default for VaultState {
     fn default() -> Self {
         Self {
             store: Mutex::new(None),
+            entry_count: AtomicU32::new(0),
         }
     }
 }
-
 #[derive(Serialize)]
 pub struct VaultStatus {
     pub master_pw_enabled: bool,
@@ -31,7 +35,7 @@ fn vault_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 #[tauri::command]
-pub fn vault_status(app: AppHandle) -> Result<VaultStatus, String> {
+pub fn vault_status(app: AppHandle, state: State<'_, VaultState>) -> Result<VaultStatus, String> {
     let path = vault_path(&app)?;
     let vault_exists = path.exists();
 
@@ -43,22 +47,13 @@ pub fn vault_status(app: AppHandle) -> Result<VaultStatus, String> {
         .unwrap_or(false);
 
     let mut master_pw_enabled = false;
-    let mut entry_count = 0u32;
     if vault_exists {
-        if let Ok(buf) = std::fs::read(&path) {
-            if buf.len() >= 6 && &buf[0..4] == b"UNBR" && buf[4] == 0x01 {
-                master_pw_enabled = (buf[5] & 0x01) != 0;
-            }
-        }
-        if !master_pw_enabled {
-            if let Ok(store) = VaultStore::open(path.clone(), None) {
-                if let Ok(entries) = store.load() {
-                    entry_count = entries.len() as u32;
-                }
-            }
+        if let Ok(header) = VaultStore::peek_header(&path) {
+            master_pw_enabled = header.is_some_and(|h| h.master_pw_enabled);
         }
     }
 
+    let entry_count = state.entry_count.load(Ordering::Relaxed);
     Ok(VaultStatus {
         master_pw_enabled,
         keyring_ok,
@@ -93,9 +88,12 @@ pub fn vault_unlock(
     // Without this, a wrong master password is silently accepted, the history
     // appears empty, and the first save re-encrypts with a wrong key —
     // permanently destroying the vault.
-    store
+    let entries = store
         .load()
         .map_err(|_| "mot de passe incorrect".to_string())?;
+    state
+        .entry_count
+        .store(entries.len() as u32, Ordering::Relaxed);
     *state.store.lock().unwrap_or_else(|p| p.into_inner()) = Some(store);
     Ok(())
 }
@@ -111,7 +109,12 @@ pub fn vault_load(state: State<'_, VaultState>) -> Result<Vec<HistoryEntry>, Str
 pub fn vault_save(state: State<'_, VaultState>, entries: Vec<HistoryEntry>) -> Result<(), String> {
     let mut guard = state.store.lock().unwrap_or_else(|p| p.into_inner());
     let store = guard.as_mut().ok_or("vault not unlocked")?;
-    store.save(&entries).map_err(|e| e.to_string())
+    store.save(&entries).map_err(|e| e.to_string())?;
+    drop(guard);
+    state
+        .entry_count
+        .store(entries.len() as u32, Ordering::Relaxed);
+    Ok(())
 }
 
 #[tauri::command]
@@ -159,5 +162,6 @@ pub fn vault_clear(
     }
     // Reset the in-memory store so subsequent vault_status / vault_unlock reflect the wipe.
     *state.store.lock().unwrap_or_else(|p| p.into_inner()) = None;
+    state.entry_count.store(0, Ordering::Relaxed);
     Ok(())
 }

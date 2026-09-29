@@ -17,7 +17,14 @@ export function ClipboardBadge() {
       setRemaining(0);
       return;
     }
-    const tick = () => setRemaining(Math.max(0, (expiresAt - Date.now()) / 1000));
+    // P2: keep the raw fractional value for the arc, but only store the
+    // displayed second in state — the component re-renders once per second
+    // instead of five times per second while the TTL countdown is active.
+    const tick = () =>
+      setRemaining((prev) => {
+        const seconds = Math.ceil(Math.max(0, (expiresAt - Date.now()) / 1000));
+        return seconds === prev ? prev : seconds;
+      });
     tick();
     const id = window.setInterval(tick, 200);
     return () => window.clearInterval(id);
@@ -37,9 +44,9 @@ export function ClipboardBadge() {
   const panelLabel = panel === "password" ? "mot de passe" : "passphrase";
 
   if (status === "copied") {
-    const fraction = ttl > 0 ? Math.max(0, Math.min(1, remaining / ttl)) : 1;
+    const seconds = remaining;
+    const fraction = ttl > 0 ? Math.max(0, Math.min(1, seconds / ttl)) : 1;
     const offset = CIRC * (1 - fraction);
-    const seconds = Math.ceil(remaining);
     return (
       <div
         className="hero-cell"
