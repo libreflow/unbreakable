@@ -12,7 +12,9 @@ use commands::clipboard::{
     cmd_clear_clipboard, cmd_clear_if_ours, cmd_copy_to_clipboard, cmd_read_clipboard,
     ClipboardState,
 };
-use commands::generate::{cmd_generate_pair, cmd_generate_passphrase, cmd_generate_password};
+use commands::generate::{
+    cmd_generate_memorable, cmd_generate_pair, cmd_generate_passphrase, cmd_generate_password,
+};
 use commands::history::VaultState;
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_clipboard_manager::ClipboardExt;
@@ -35,6 +37,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             cmd_generate_password,
+            cmd_generate_memorable,
             cmd_generate_passphrase,
             cmd_generate_pair,
             cmd_copy_to_clipboard,

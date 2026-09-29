@@ -625,6 +625,66 @@ button.link:hover { color: var(--acid); background: transparent; box-shadow: non
   margin-top: auto;
 }
 
+.panel-mode {
+  margin-top: 14px;
+}
+
+.mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  user-select: none;
+}
+
+.mode-toggle input {
+  appearance: none;
+  width: 30px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: rgba(255, 255, 255, 0.03);
+  position: relative;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+
+.mode-toggle input::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.mode-toggle input:checked {
+  border-color: var(--acid);
+  background: rgba(0, 230, 138, 0.10);
+  box-shadow: 0 0 10px rgba(0, 230, 138, 0.25);
+}
+
+.mode-toggle input:checked::after {
+  transform: translateX(14px);
+  background: var(--acid);
+}
+
+.mode-toggle:hover {
+  color: var(--ink);
+}
+
+.mode-toggle input:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 2px;
+}
+
 .panel-actions button {
   flex: 1;
   padding: 12px 10px;

@@ -1,8 +1,15 @@
-use crate::crypto::{generate_password, PasswordOptions};
+use crate::crypto::{generate_password, memorable, PasswordOptions};
 
 #[tauri::command]
 pub fn cmd_generate_password(opts: Option<PasswordOptions>) -> Result<String, String> {
     generate_password(&opts.unwrap_or_default()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn cmd_generate_memorable() -> Result<String, String> {
+    memorable::generate_memorable()
+        .map(|z| (*z).clone())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

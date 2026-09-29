@@ -14,6 +14,9 @@ export type PassphraseParams = {
 export const generatePassword = (opts?: Partial<PasswordOptions>) =>
   invoke<string>("cmd_generate_password", { opts });
 
+export const generateMemorable = () =>
+  invoke<string>("cmd_generate_memorable");
+
 export const generatePassphrase = (params: PassphraseParams) =>
   invoke<string>("cmd_generate_passphrase", params);
 

@@ -3,7 +3,7 @@ import { useGenerator } from "../../stores/generatorStore";
 import { useClipboard } from "../../stores/clipboardStore";
 import { useSettings } from "../../stores/settingsStore";
 import { useHistory } from "../../stores/historyStore";
-import { copyToClipboard, generatePassword } from "../../utils/tauriCommands";
+import { copyToClipboard, generateMemorable, generatePassword } from "../../utils/tauriCommands";
 import { analyzeStrength } from "../../utils/strength";
 import { StrengthMeter } from "../StrengthMeter/StrengthMeter";
 import { setWindowProtected } from "../../utils/windowProtection";
@@ -15,6 +15,7 @@ export function PasswordPanel() {
   const addHistory = useHistory((s) => s.add);
   const [hidden, setHidden] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [memorable, setMemorable] = useState(false);
 
   // Anti-screenshot: keep the main window protected while this panel is
   // mounted. PassphrasePanel renders the passphrase in plaintext beside
@@ -29,12 +30,15 @@ export function PasswordPanel() {
   const regenerate = async () => {
     setErr(null);
     try {
-      const p = await generatePassword(pwdOpts);
+      const p = memorable ? await generateMemorable() : await generatePassword(pwdOpts);
       setPassword(p);
     } catch (e) {
       setErr(String(e));
     }
   };
+  useEffect(() => {
+    regenerate();
+  }, [memorable]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const copy = async () => {
     if (!password) return;
@@ -50,7 +54,7 @@ export function PasswordPanel() {
           <span className="panel-number">01.</span>
           <h2 id="pwd-title">Mot de passe</h2>
         </div>
-        <span className="panel-meta">{password.length} chars · site-compat</span>
+        <span className="panel-meta">{memorable ? "mémorable FR · 14-20" : `${password.length} chars · site-compat`}</span>
       </header>
       <div
         className="secret-display"
@@ -61,6 +65,16 @@ export function PasswordPanel() {
       </div>
       <StrengthMeter secret={password} />
       {err && <div className="error-inline" role="alert">{err}</div>}
+      <div className="panel-mode">
+        <label className="mode-toggle">
+          <input
+            type="checkbox"
+            checked={memorable}
+            onChange={(e) => setMemorable(e.target.checked)}
+          />
+          <span>Mot de passe mémorable (mots français)</span>
+        </label>
+      </div>
       <div className="panel-actions">
         <button onClick={copy} className="btn-primary" aria-label="Copier le mot de passe">
           Copier

@@ -1,4 +1,5 @@
 pub mod engine;
+pub mod memorable;
 pub mod storage;
 pub mod wordlist;
 
