@@ -1,7 +1,7 @@
 // Note: requires OS keyring access. Run with `cargo test -- --ignored`.
-use unbreakable_lib::crypto::storage::{VaultStore, HistoryEntry};
-use tempfile::TempDir;
 use std::sync::Mutex;
+use tempfile::TempDir;
+use unbreakable_lib::crypto::storage::{HistoryEntry, VaultStore};
 
 // Keyring operations are process-global; serialize tests to avoid KEK race.
 static KEYRING_LOCK: Mutex<()> = Mutex::new(());
@@ -86,5 +86,8 @@ fn wrong_master_pw_rejected() {
 
     let v2 = VaultStore::open(path.clone(), Some("WRONGPASSWORD"));
     let result = v2.and_then(|s| s.load());
-    assert!(result.is_err(), "expected decrypt failure with wrong password");
+    assert!(
+        result.is_err(),
+        "expected decrypt failure with wrong password"
+    );
 }

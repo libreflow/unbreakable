@@ -3,7 +3,7 @@ import { vault } from "../../utils/vault";
 
 type Props = {
   onUnlocked: () => void;
-  onForgotten: () => void;
+  onForgotten: (pw: string) => void;
 };
 
 export function UnlockModal({ onUnlocked, onForgotten }: Props) {
@@ -50,7 +50,7 @@ export function UnlockModal({ onUnlocked, onForgotten }: Props) {
           {remaining > 0 && <div className="error">Veuillez patienter {Math.ceil(remaining/1000)}s…</div>}
           <button type="submit" disabled={!pw || remaining > 0}>Déverrouiller</button>
         </form>
-        <button className="link" onClick={onForgotten}>J'ai oublié mon mot de passe…</button>
+        <button className="link" onClick={() => onForgotten(pw)}>J'ai oublié mon mot de passe…</button>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-use crate::crypto::storage::{VaultStore, HistoryEntry};
+use crate::crypto::storage::{HistoryEntry, VaultStore};
 use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -9,7 +9,11 @@ pub struct VaultState {
 }
 
 impl Default for VaultState {
-    fn default() -> Self { Self { store: Mutex::new(None) } }
+    fn default() -> Self {
+        Self {
+            store: Mutex::new(None),
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -32,7 +36,10 @@ pub fn vault_status(app: AppHandle) -> Result<VaultStatus, String> {
     let vault_exists = path.exists();
 
     let keyring_ok = keyring::Entry::new("com.unbreakable.app", "vault-kek")
-        .map(|e| { let _ = e.get_password(); true })
+        .map(|e| {
+            let _ = e.get_password();
+            true
+        })
         .unwrap_or(false);
 
     let mut master_pw_enabled = false;
@@ -45,16 +52,41 @@ pub fn vault_status(app: AppHandle) -> Result<VaultStatus, String> {
         }
         if !master_pw_enabled {
             if let Ok(store) = VaultStore::open(path.clone(), None) {
-                if let Ok(entries) = store.load() { entry_count = entries.len() as u32; }
+                if let Ok(entries) = store.load() {
+                    entry_count = entries.len() as u32;
+                }
             }
         }
     }
 
-    Ok(VaultStatus { master_pw_enabled, keyring_ok, entry_count, vault_exists })
+    Ok(VaultStatus {
+        master_pw_enabled,
+        keyring_ok,
+        entry_count,
+        vault_exists,
+    })
+}
+
+const MAX_MASTER_PW_LEN: usize = 1024;
+
+fn validate_master_pw(master_pw: &Option<String>) -> Result<(), String> {
+    if let Some(pw) = master_pw {
+        if pw.len() > MAX_MASTER_PW_LEN {
+            return Err(format!(
+                "master password too long (max {MAX_MASTER_PW_LEN} bytes)"
+            ));
+        }
+    }
+    Ok(())
 }
 
 #[tauri::command]
-pub fn vault_unlock(app: AppHandle, state: State<'_, VaultState>, master_pw: Option<String>) -> Result<(), String> {
+pub fn vault_unlock(
+    app: AppHandle,
+    state: State<'_, VaultState>,
+    master_pw: Option<String>,
+) -> Result<(), String> {
+    validate_master_pw(&master_pw)?;
     let path = vault_path(&app)?;
     let store = VaultStore::open(path, master_pw.as_deref()).map_err(|e| e.to_string())?;
     *state.store.lock().unwrap() = Some(store);
@@ -76,17 +108,41 @@ pub fn vault_save(state: State<'_, VaultState>, entries: Vec<HistoryEntry>) -> R
 }
 
 #[tauri::command]
-pub fn vault_set_master_password(state: State<'_, VaultState>, new_pw: Option<String>) -> Result<(), String> {
+pub fn vault_set_master_password(
+    state: State<'_, VaultState>,
+    new_pw: Option<String>,
+) -> Result<(), String> {
+    validate_master_pw(&new_pw)?;
     let mut guard = state.store.lock().unwrap();
     let store = guard.as_mut().ok_or("vault not unlocked")?;
-    store.rotate_master_password(new_pw.as_deref()).map_err(|e| e.to_string())
+    store
+        .rotate_master_password(new_pw.as_deref())
+        .map_err(|e| e.to_string())
 }
 
+/// Wipe the vault file and keyring KEK. Requires the master password when one
+/// is enabled — wiping is a destructive operation gated by the same secret that
+/// protects the data (CWE-306: missing authentication on destructive command).
 #[tauri::command]
-pub fn vault_clear(app: AppHandle, state: State<'_, VaultState>) -> Result<(), String> {
+pub fn vault_clear(
+    app: AppHandle,
+    state: State<'_, VaultState>,
+    master_pw: Option<String>,
+) -> Result<(), String> {
+    validate_master_pw(&master_pw)?;
     let path = vault_path(&app)?;
-    // Wipe the vault file directly — no unlock required (physical access already
-    // implies the user can delete the data dir manually).
+
+    // Authenticate before destroying anything when a master password is enabled.
+    if path.exists() {
+        let header = VaultStore::peek_header(&path).map_err(|e| e.to_string())?;
+        if header.as_ref().is_some_and(|h| h.master_pw_enabled) {
+            let store = VaultStore::open(path.clone(), master_pw.as_deref())
+                .and_then(|s| s.load().map(|_| s))
+                .map_err(|_| "master password requis ou incorrect".to_string())?;
+            drop(store);
+        }
+    }
+
     if path.exists() {
         std::fs::remove_file(&path).map_err(|e| e.to_string())?;
     }

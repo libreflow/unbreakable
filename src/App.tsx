@@ -217,9 +217,9 @@ function App() {
           const legacy = detectLegacyCount();
           setBoot(legacy > 0 ? { phase: "migrate", count: legacy } : { phase: "ready" });
         }}
-        onForgotten={async () => {
+        onForgotten={async (pw) => {
           if (!confirm("Effacer le coffre et perdre tout l'historique ?")) return;
-          try { await vault.clear(); } catch (e) { console.error("vault.clear failed:", e); }
+          try { await vault.clear(pw || null); } catch (e) { console.error("vault.clear failed:", e); }
           setBoot({ phase: "ready" });
         }}
       />

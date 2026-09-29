@@ -35,9 +35,11 @@ describe("vault IPC wrapper", () => {
     expect(invoke).toHaveBeenCalledWith("vault_set_master_password", { newPw: "pw" });
   });
 
-  it("clear() invokes vault_clear", async () => {
+  it("clear() invokes vault_clear with masterPw", async () => {
     vi.mocked(invoke).mockResolvedValue(undefined);
-    await vault.clear();
-    expect(invoke).toHaveBeenCalledWith("vault_clear");
+    await vault.clear("secret-pw");
+    expect(invoke).toHaveBeenCalledWith("vault_clear", { masterPw: "secret-pw" });
+    await vault.clear(null);
+    expect(invoke).toHaveBeenCalledWith("vault_clear", { masterPw: null });
   });
 });

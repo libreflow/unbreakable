@@ -3,6 +3,17 @@ import { vault, HistoryEntry } from "../utils/vault";
 import { CopiedPanel } from "../types";
 
 const MAX_ENTRIES = 200;
+const RAM_EXPIRY_MS = 5 * 60 * 1000;
+
+let ramTimer: ReturnType<typeof setTimeout> | null = null;
+const scheduleRamExpiry = () => {
+  if (ramTimer) clearTimeout(ramTimer);
+  ramTimer = setTimeout(() => {
+    ramTimer = null;
+    const s = useHistory.getState();
+    if (s.entries.length > 0) s.clear();
+  }, RAM_EXPIRY_MS);
+};
 
 interface HistoryState {
   entries: HistoryEntry[];
@@ -22,7 +33,9 @@ const debouncedSave = (entries: HistoryEntry[]) => {
   }, 500);
 };
 
-export const useHistory = create<HistoryState>((set, get) => ({
+export const useHistory = create<HistoryState>((set, get) => {
+  scheduleRamExpiry();
+  return ({
   entries: [],
   hydrated: false,
 
@@ -48,6 +61,7 @@ export const useHistory = create<HistoryState>((set, get) => ({
     const next = [entry, ...get().entries].slice(0, MAX_ENTRIES);
     set({ entries: next });
     debouncedSave(next);
+    scheduleRamExpiry();
   },
 
   remove: (id) => {
@@ -60,4 +74,5 @@ export const useHistory = create<HistoryState>((set, get) => ({
     set({ entries: [] });
     debouncedSave([]);
   },
-}));
+  }) as HistoryState;
+});

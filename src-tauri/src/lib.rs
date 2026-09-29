@@ -12,8 +12,8 @@ use commands::clipboard::{
     cmd_clear_clipboard, cmd_clear_if_ours, cmd_copy_to_clipboard, cmd_read_clipboard,
     ClipboardState,
 };
+use commands::generate::{cmd_generate_pair, cmd_generate_passphrase, cmd_generate_password};
 use commands::history::VaultState;
-use commands::generate::{cmd_generate_password, cmd_generate_passphrase, cmd_generate_pair};
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 
@@ -29,6 +29,10 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .manage(ClipboardState::default())
         .manage(VaultState::default())
+        .setup(|app| {
+            commands::clipboard::recover_stale_clipboard(app.handle());
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             cmd_generate_password,
             cmd_generate_passphrase,
@@ -60,7 +64,11 @@ pub fn run() {
             if let WindowEvent::CloseRequested { .. } = event {
                 let app = window.app_handle().clone();
                 let state = app.state::<ClipboardState>();
-                let last = state.last_written.lock().ok().and_then(|g| g.as_deref().map(|s| s.to_string()));
+                let last = state
+                    .last_written
+                    .lock()
+                    .ok()
+                    .and_then(|g| g.as_deref().map(|s| s.to_string()));
                 if let Some(last) = last {
                     if let Ok(current) = app.clipboard().read_text() {
                         if current == last {
