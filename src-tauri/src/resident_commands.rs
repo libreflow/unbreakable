@@ -89,8 +89,11 @@ pub fn notify_generation_failed<R: Runtime>(
 ) -> Result<(), String> {
     app.notification()
         .builder()
-        .title("Unbreakable")
+        .title("Unbreakable — erreur")
         .body(format!("Génération impossible : {message}"))
+        // Distinct sound + title so a failure is audibly distinguishable
+        // from the routine "copied" notifications.
+        .sound("ms-winsoundevent:Notification.Looping.Alarm")
         .show()
         .map_err(|e| e.to_string())
 }

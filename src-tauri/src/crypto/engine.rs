@@ -167,9 +167,9 @@ fn entropy_bits(charset_size: usize, length: usize) -> f64 {
 }
 
 pub fn generate_password(opts: &PasswordOptions) -> Result<String> {
-    if opts.length < 8 || opts.length > 128 {
+    if opts.length < 12 || opts.length > 128 {
         return Err(UnbreakableError::InvalidOptions(format!(
-            "length {} out of range [8,128]",
+            "length {} out of range [12,128]",
             opts.length
         )));
     }
@@ -265,9 +265,18 @@ mod tests {
     }
 
     #[test]
-    fn rejects_length_below_8() {
+    fn rejects_length_below_12() {
         let opts = PasswordOptions {
             length: 4,
+            ..Default::default()
+        };
+        assert!(matches!(
+            generate_password(&opts),
+            Err(UnbreakableError::InvalidOptions(_))
+        ));
+        // 8 chars was the old floor; now rejected outright (hardening)
+        let opts = PasswordOptions {
+            length: 8,
             ..Default::default()
         };
         assert!(matches!(
@@ -306,7 +315,7 @@ mod tests {
     #[test]
     fn rejects_below_min_entropy() {
         let opts = PasswordOptions {
-            length: 8,
+            length: 12,
             uppercase: false,
             lowercase: false,
             digits: true,
