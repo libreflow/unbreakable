@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Scratch / personal files accumulated at repo root — not part of the
+# product (audit finding 2026-09-29): third-party updater archive, design
+# reference images, a personal CV PDF. Excluded from tracking, kept on disk.
+sparkle-*-win/
+sparkle-*-win.zip
+ChatGPT Image*.png
+cv_robin_*.pdf
+unbreakable.png
