@@ -22,5 +22,5 @@ export const vault = {
   load: () => invoke<HistoryEntry[]>("vault_load"),
   save: (entries: HistoryEntry[]) => invoke<void>("vault_save", { entries }),
   setMasterPassword: (newPw: string | null) => invoke<void>("vault_set_master_password", { newPw }),
-  clear: () => invoke<void>("vault_clear"),
+  clear: (masterPw: string | null) => invoke<void>("vault_clear", { masterPw }),
 };

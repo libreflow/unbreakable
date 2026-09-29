@@ -18,7 +18,8 @@
         "minWidth": 600,
         "minHeight": 480,
         "resizable": true,
-        "center": true
+        "center": true,
+        "devtools": false
       }
     ],
     "security": {
@@ -27,7 +28,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": "msi",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

@@ -43,7 +43,17 @@ export function SecuritySection() {
   async function wipeVault() {
     if (!confirm("EFFACER tout l'historique ? Cette action est irréversible.")) return;
     if (prompt("Tapez EFFACER pour confirmer") !== "EFFACER") return;
-    await vault.clear();
+    let masterPw: string | null = null;
+    if (status?.master_pw_enabled) {
+      masterPw = prompt("Mot de passe maître requis pour effacer le coffre :");
+      if (!masterPw) return;
+    }
+    try {
+      await vault.clear(masterPw);
+    } catch {
+      alert("Mot de passe maître incorrect.");
+      return;
+    }
     useHistory.getState().clear();  // clear in-memory entries so debounced save can't re-populate
     await refresh();
   }
@@ -90,6 +100,14 @@ export function SecuritySection() {
         <label>Keystore OS</label>
         <span>{status.keyring_ok ? "✓ Disponible" : "✗ Indisponible"}</span>
       </div>
+      {!status.master_pw_enabled && (
+        <div className="row">
+          <span className="warning">
+            ⚠ Sans mot de passe maître, la protection du coffre repose uniquement sur le
+            keystore du système. Tout processus exécuté avec votre compte peut le déchiffrer.
+          </span>
+        </div>
+      )}
 
       <div className="row">
         <label>Entrées dans le coffre</label>

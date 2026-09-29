@@ -57,16 +57,32 @@ fn filter_chars(src: &str, exclude_ambiguous: bool, manual_exclude: &str) -> Vec
 fn build_groups(opts: &PasswordOptions) -> Vec<Vec<char>> {
     let mut groups = Vec::new();
     if opts.uppercase {
-        groups.push(filter_chars(UPPER, opts.exclude_ambiguous, &opts.exclude_chars));
+        groups.push(filter_chars(
+            UPPER,
+            opts.exclude_ambiguous,
+            &opts.exclude_chars,
+        ));
     }
     if opts.lowercase {
-        groups.push(filter_chars(LOWER, opts.exclude_ambiguous, &opts.exclude_chars));
+        groups.push(filter_chars(
+            LOWER,
+            opts.exclude_ambiguous,
+            &opts.exclude_chars,
+        ));
     }
     if opts.digits {
-        groups.push(filter_chars(DIGIT, opts.exclude_ambiguous, &opts.exclude_chars));
+        groups.push(filter_chars(
+            DIGIT,
+            opts.exclude_ambiguous,
+            &opts.exclude_chars,
+        ));
     }
     if opts.symbols {
-        groups.push(filter_chars(SYMBOL, opts.exclude_ambiguous, &opts.exclude_chars));
+        groups.push(filter_chars(
+            SYMBOL,
+            opts.exclude_ambiguous,
+            &opts.exclude_chars,
+        ));
     }
     groups.retain(|g| !g.is_empty());
     groups
@@ -179,9 +195,8 @@ pub fn generate_password(opts: &PasswordOptions) -> Result<String> {
     }
 
     // Build lookup sets once outside the retry loop — O(1) membership test vs O(n).
-    let group_sets: Vec<HashSet<char>> = groups.iter()
-        .map(|g| g.iter().copied().collect())
-        .collect();
+    let group_sets: Vec<HashSet<char>> =
+        groups.iter().map(|g| g.iter().copied().collect()).collect();
 
     // Pre-fill entropy for all chars + shuffle in one syscall.
     // Factor of 3 provides headroom for rejection-sampling retries (probability ≈ 0 for typical charsets).

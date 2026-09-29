@@ -6,7 +6,11 @@ use crate::{quick_window, shortcuts, tray};
 
 #[tauri::command]
 pub fn enable_tray<R: Runtime>(app: AppHandle<R>, enable: bool) -> Result<(), String> {
-    if enable { tray::install(&app) } else { tray::uninstall(&app) }
+    if enable {
+        tray::install(&app)
+    } else {
+        tray::uninstall(&app)
+    }
 }
 
 #[tauri::command]
@@ -50,7 +54,11 @@ pub fn show_main_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
 
 #[tauri::command]
 pub fn notify_copied<R: Runtime>(app: AppHandle<R>, kind: String, ttl: u32) -> Result<(), String> {
-    let label = if kind == "password" { "Mot de passe" } else { "Passphrase" };
+    let label = if kind == "password" {
+        "Mot de passe"
+    } else {
+        "Passphrase"
+    };
     let body = if ttl > 0 {
         format!("{label} copié · {ttl} s avant effacement")
     } else {

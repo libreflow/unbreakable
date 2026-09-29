@@ -23,7 +23,7 @@ npm install
 npm run tauri dev
 ```
 
-Prérequis : Node ≥ 22.12, Rust ≥ 1.87, WebView2 (Win) / WebKitGTK 4.1 (Linux) / Xcode CLI (macOS).
+Prérequis : Node ≥ 22.12, Rust ≥ 1.87, WebView2 (Windows 10/11). **Application Windows uniquement** (MSI).
 
 ## Scripts
 
@@ -34,8 +34,10 @@ Prérequis : Node ≥ 22.12, Rust ≥ 1.87, WebView2 (Win) / WebKitGTK 4.1 (Linu
 | `npm run build` | `tsc` + Vite build → `dist/` |
 | `npm run preview` | Prévisualisation du build Vite |
 | `npm run tauri dev` | App desktop complète (hot-reload) |
-| `npm run tauri build` | Bundles signés multi-OS (`.msi`, `.dmg`, `.deb`) |
+| `npm run tauri build` | Bundle d'installation Windows (`.msi`) |
+| `npm test` | Tests frontend Vitest (`tests/`) |
 | `cargo test --lib` | Tests unitaires Rust (depuis `src-tauri/`) |
+| `cargo test` | Tests Rust complets : unitaires + intégration |
 <!-- END AUTO-GENERATED -->
 
 ## Raccourcis
@@ -126,9 +128,10 @@ Prérequis : Node ≥ 22.12, Rust ≥ 1.87, WebView2 (Win) / WebKitGTK 4.1 (Linu
 
 ## TODO
 
-- Wordlist EFF Large (7776 mots) via `include_bytes!`
-- Wordlist FR Diceware
-- Tests proptest
 - Plugin updater + endpoint signé
-- E2E Playwright cross-OS
-- Notarisation Apple + signtool Windows
+- Signature de code Windows (signtool / EV certificate)
+- E2E Playwright cross-OS (dépendance déjà déclarée)
+
+## Licence
+
+MIT — voir [LICENSE](LICENSE).

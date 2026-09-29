@@ -14,9 +14,15 @@ pub fn cmd_generate_passphrase(
     include_symbol: bool,
 ) -> Result<String, String> {
     let sep = separator.chars().next().unwrap_or('-');
-    crate::crypto::wordlist::generate_passphrase(lang, word_count, sep, include_digit, include_symbol)
-        .map(|z| (*z).clone())
-        .map_err(|e| e.to_string())
+    crate::crypto::wordlist::generate_passphrase(
+        lang,
+        word_count,
+        sep,
+        include_digit,
+        include_symbol,
+    )
+    .map(|z| (*z).clone())
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -31,8 +37,14 @@ pub fn cmd_generate_pair(
     let sep = separator.chars().next().unwrap_or('-');
     let pwd = crate::crypto::generate_password(&pwd_opts.unwrap_or_default())
         .map_err(|e| e.to_string())?;
-    let phrase = crate::crypto::wordlist::generate_passphrase(lang, word_count, sep, include_digit, include_symbol)
-        .map(|z| (*z).clone())
-        .map_err(|e| e.to_string())?;
+    let phrase = crate::crypto::wordlist::generate_passphrase(
+        lang,
+        word_count,
+        sep,
+        include_digit,
+        include_symbol,
+    )
+    .map(|z| (*z).clone())
+    .map_err(|e| e.to_string())?;
     Ok((pwd, phrase))
 }
