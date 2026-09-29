@@ -44,8 +44,21 @@ export function useAutoGenerate() {
     if (status !== "copied") return;
     const { expiresAt } = useClipboard.getState();
     if (!expiresAt) return;
+    // Always read the *current* expiresAt inside the tick: the clipboard state
+    // can be refreshed by a cross-window event (QuickPop copy) after this effect
+    // ran, and the interval would otherwise compare against a stale deadline —
+    // and never fire (B5). The 500ms cadence also keeps expiry roughly on time
+    // when the WebView throttles background timers (B4).
     timerRef.current = window.setInterval(async () => {
-      if (Date.now() >= expiresAt) {
+      const current = useClipboard.getState();
+      if (current.status !== "copied") {
+        if (timerRef.current) {
+          window.clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        return;
+      }
+      if (current.expiresAt && Date.now() >= current.expiresAt) {
         try {
           const cleared = await clearIfOurs();
           useClipboard.getState().setStatus(cleared ? "expired" : "modified");

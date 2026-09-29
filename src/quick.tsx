@@ -23,6 +23,31 @@ try {
   document.documentElement.dataset.theme = "dark";
 }
 
+const applyQuickTheme = () => {
+  try {
+    const raw = localStorage.getItem("unbreakable.settings");
+    let theme: "auto" | "light" | "dark" = "auto";
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      theme = parsed?.state?.theme ?? "auto";
+    }
+    const resolved =
+      theme === "auto"
+        ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+        : theme;
+    document.documentElement.dataset.theme = resolved;
+  } catch {
+    document.documentElement.dataset.theme = "dark";
+  }
+};
+
+applyQuickTheme();
+
+// B7: keep the QuickPop theme in sync when settings change in the main window.
+import("./utils/crossWindowEvents").then(({ listenSettingsChanged }) =>
+  listenSettingsChanged(applyQuickTheme),
+);
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QuickPop />

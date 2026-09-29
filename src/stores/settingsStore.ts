@@ -18,7 +18,16 @@ export const useSettings = create<SettingsState>()(
     (set) => ({
       ...DEFAULT_SETTINGS,
       passphrase_lang: detectLang(),
-      set: (patch) => set(patch),
+      set: (patch) => {
+        set(patch);
+        // B7: notify other windows (QuickPop) that settings changed so they
+        // can re-read localStorage (theme, options) instead of staying stale.
+        import("../utils/crossWindowEvents").then(({ emitSettingsChanged }) => {
+          Object.entries(patch).forEach(([key, value]) =>
+            emitSettingsChanged({ key, value }).catch(() => {}),
+          );
+        });
+      },
       reset: () => set({ ...DEFAULT_SETTINGS, passphrase_lang: detectLang() }),
     }),
     {

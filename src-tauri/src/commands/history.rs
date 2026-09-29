@@ -89,6 +89,13 @@ pub fn vault_unlock(
     validate_master_pw(&master_pw)?;
     let path = vault_path(&app)?;
     let store = VaultStore::open(path, master_pw.as_deref()).map_err(|e| e.to_string())?;
+    // Verify the key material actually decrypts the vault before accepting it.
+    // Without this, a wrong master password is silently accepted, the history
+    // appears empty, and the first save re-encrypts with a wrong key —
+    // permanently destroying the vault.
+    store
+        .load()
+        .map_err(|_| "mot de passe incorrect".to_string())?;
     *state.store.lock().unwrap() = Some(store);
     Ok(())
 }

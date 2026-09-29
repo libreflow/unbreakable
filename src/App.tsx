@@ -53,6 +53,7 @@ function App() {
   const addHistory = useHistory((s) => s.add);
 
   const [boot, setBoot] = useState<BootState>({ phase: "loading" });
+  const [genError, setGenError] = useState<string | null>(null);
 
   useEffect(() => {
     applyTheme(theme);
@@ -92,8 +93,11 @@ function App() {
       ]);
       setPassword(p);
       setPassphrase(ph);
+      setGenError(null);
     } catch (e) {
+      // B10: surface generation failures instead of failing silently.
       console.error(e);
+      setGenError(String(e));
     }
   }, [pwdOpts, phraseOpts, setPassword, setPassphrase]);
 
@@ -262,6 +266,11 @@ function App() {
         <PasswordPanel />
         <PassphrasePanel />
       </section>
+      {genError && (
+        <div className="error-inline" role="alert" aria-live="polite">
+          Génération impossible : {genError}
+        </div>
+      )}
 
       <Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <History open={historyOpen} onClose={() => setHistoryOpen(false)} />

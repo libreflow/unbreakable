@@ -9,19 +9,25 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(", ");
 
+function focusFirst(el: HTMLElement) {
+  const focusable = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE));
+  focusable[0]?.focus();
+}
+
 export function useDialogFocus(open: boolean, ref: React.RefObject<HTMLElement | null>) {
   const triggerRef = useRef<Element | null>(null);
-
   useEffect(() => {
     if (open) {
       triggerRef.current = document.activeElement;
       const el = ref.current;
       if (!el) return;
-      const focusable = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE));
-      focusable[0]?.focus();
-
+      focusFirst(el);
       const trap = (e: KeyboardEvent) => {
-        if (e.key !== "Tab" || !focusable.length) return;
+        if (e.key !== "Tab") return;
+        // Recompute on every Tab so dynamically added/removed elements
+        // (error fields, confirm groups) stay inside the trap.
+        const focusable = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE));
+        if (!focusable.length) return;
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
         if (e.shiftKey && document.activeElement === first) {
@@ -32,7 +38,6 @@ export function useDialogFocus(open: boolean, ref: React.RefObject<HTMLElement |
           first.focus();
         }
       };
-
       el.addEventListener("keydown", trap);
       return () => el.removeEventListener("keydown", trap);
     } else {

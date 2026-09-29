@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { vault, HistoryEntry } from "../utils/vault";
 import { CopiedPanel } from "../types";
-
-const MAX_ENTRIES = 200;
+import { useSettings } from "./settingsStore";
 const RAM_EXPIRY_MS = 5 * 60 * 1000;
 
 let ramTimer: ReturnType<typeof setTimeout> | null = null;
@@ -11,7 +10,9 @@ const scheduleRamExpiry = () => {
   ramTimer = setTimeout(() => {
     ramTimer = null;
     const s = useHistory.getState();
-    if (s.entries.length > 0) s.clear();
+    // Purge decrypted secrets from RAM only — never persist the purge:
+    // the encrypted vault on disk must survive an idle timeout.
+    if (s.entries.length > 0) s.purgeFromRam();
   }, RAM_EXPIRY_MS);
 };
 
@@ -22,9 +23,13 @@ interface HistoryState {
   add: (kind: CopiedPanel, plain: string, score: number, label?: string) => void;
   remove: (id: string) => void;
   clear: () => void;
+  purgeFromRam: () => void;
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+// B6: honor the user-configured history_max setting (fallback 200).
+const maxEntries = () => useSettings.getState().history_max || 200;
+
 const debouncedSave = (entries: HistoryEntry[]) => {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
@@ -42,7 +47,7 @@ export const useHistory = create<HistoryState>((set, get) => {
   hydrate: async () => {
     try {
       const loaded = await vault.load();
-      set({ entries: loaded.slice(0, MAX_ENTRIES), hydrated: true });
+      set({ entries: loaded.slice(0, maxEntries()), hydrated: true });
     } catch (e) {
       console.error("vault_load failed:", e);
       set({ entries: [], hydrated: true });
@@ -58,7 +63,7 @@ export const useHistory = create<HistoryState>((set, get) => {
       score,
       created_at: new Date().toISOString(),
     };
-    const next = [entry, ...get().entries].slice(0, MAX_ENTRIES);
+    const next = [entry, ...get().entries].slice(0, maxEntries());
     set({ entries: next });
     debouncedSave(next);
     scheduleRamExpiry();
@@ -73,6 +78,15 @@ export const useHistory = create<HistoryState>((set, get) => {
   clear: () => {
     set({ entries: [] });
     debouncedSave([]);
+  },
+  // RAM-only purge (security idle timeout): drop plaintext from memory
+  // without touching the encrypted vault on disk.
+  purgeFromRam: () => {
+    if (saveTimer) {
+      clearTimeout(saveTimer);
+      saveTimer = null;
+    }
+    set({ entries: [] });
   },
   }) as HistoryState;
 });

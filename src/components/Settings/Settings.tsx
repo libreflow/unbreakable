@@ -78,7 +78,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
             />
           </label>
           <label>Séparateur
-            <input type="text" maxLength={4} value={phraseOpts.separator} onChange={(e) => setPhraseOpts({ separator: e.target.value })} />
+            <input type="text" maxLength={1} value={phraseOpts.separator} onChange={(e) => setPhraseOpts({ separator: e.target.value })} aria-describedby="sep-hint" />
           </label>
           <label className="check"><input type="checkbox" checked={phraseOpts.include_digit} onChange={(e) => setPhraseOpts({ include_digit: e.target.checked })} /> Ajouter 1 chiffre</label>
           <label className="check"><input type="checkbox" checked={phraseOpts.include_symbol} onChange={(e) => setPhraseOpts({ include_symbol: e.target.checked })} /> Ajouter 1 symbole</label>
