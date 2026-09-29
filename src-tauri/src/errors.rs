@@ -15,6 +15,8 @@ pub enum UnbreakableError {
     #[error("generation exceeded max attempts ({0})")]
     GenerationExhausted(u32),
 
+    #[error("io: {0}")]
+    Io(#[from] std::io::Error),
     #[error("clipboard error: {0}")]
     Clipboard(String),
 }
