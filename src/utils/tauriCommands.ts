@@ -5,10 +5,10 @@ export type { PassphraseLang };
 
 export type PassphraseParams = {
   lang: PassphraseLang;
-  word_count: number;
+  wordCount: number;
   separator: string;
-  include_digit: boolean;
-  include_symbol: boolean;
+  includeDigit: boolean;
+  includeSymbol: boolean;
 };
 
 export const generatePassword = (opts?: Partial<PasswordOptions>) =>
@@ -21,10 +21,10 @@ export const generatePassphrase = (params: PassphraseParams) =>
 export const generatePassphraseFromOpts = (opts: PassphraseOptions, lang: PassphraseLang) =>
   generatePassphrase({
     lang,
-    word_count: opts.words,
+    wordCount: opts.words,
     separator: opts.separator,
-    include_digit: opts.include_digit,
-    include_symbol: opts.include_symbol,
+    includeDigit: opts.include_digit,
+    includeSymbol: opts.include_symbol,
   });
 
 export const generatePair = (
@@ -40,10 +40,10 @@ export const generatePairFromOpts = (
 ) =>
   generatePair(pwdOpts, {
     lang,
-    word_count: phraseOpts.words,
+    wordCount: phraseOpts.words,
     separator: phraseOpts.separator,
-    include_digit: phraseOpts.include_digit,
-    include_symbol: phraseOpts.include_symbol,
+    includeDigit: phraseOpts.include_digit,
+    includeSymbol: phraseOpts.include_symbol,
   });
 
 export const copyToClipboard = (text: string) =>
