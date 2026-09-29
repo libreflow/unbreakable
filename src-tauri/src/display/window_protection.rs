@@ -15,7 +15,7 @@ pub enum ProtectionError {
 }
 
 pub fn is_supported() -> bool {
-    cfg!(any(target_os = "windows", target_os = "macos"))
+    cfg!(target_os = "windows")
 }
 
 #[cfg(target_os = "windows")]
@@ -45,23 +45,7 @@ pub fn set_protected(window: &WebviewWindow, protected: bool) -> Result<(), Prot
     Ok(())
 }
 
-#[cfg(target_os = "macos")]
-pub fn set_protected(window: &WebviewWindow, protected: bool) -> Result<(), ProtectionError> {
-    use objc2_app_kit::{NSWindow, NSWindowSharingType};
-    let ns_window = window
-        .ns_window()
-        .map_err(|e| ProtectionError::OsError(e.to_string()))?;
-    let ns_window_ptr: *mut NSWindow = ns_window as *mut NSWindow;
-    let sharing = if protected {
-        NSWindowSharingType::NSWindowSharingNone
-    } else {
-        NSWindowSharingType::NSWindowSharingReadOnly
-    };
-    unsafe { (*ns_window_ptr).setSharingType(sharing) };
-    Ok(())
-}
-
-#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+#[cfg(not(target_os = "windows"))]
 pub fn set_protected(_window: &WebviewWindow, _protected: bool) -> Result<(), ProtectionError> {
     Err(ProtectionError::Unsupported)
 }

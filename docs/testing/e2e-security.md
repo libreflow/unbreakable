@@ -2,7 +2,7 @@
 
 ## Setup
 - Build the release binary: `npm run tauri build`
-- Install the resulting MSI (Windows) / DMG (Mac).
+- Install the resulting MSI (Windows).
 
 ## Test 1: QuickPop anti-capture (Windows)
 1. Launch the app.
