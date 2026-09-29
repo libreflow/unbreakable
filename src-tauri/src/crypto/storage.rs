@@ -63,7 +63,7 @@ fn load_or_create_kek() -> Result<Zeroizing<[u8; KEY_LEN]>, VaultError> {
         Err(keyring::Error::NoEntry) => {
             let mut k = [0u8; KEY_LEN];
             fill(&mut k)?;
-            entry.set_password(&B64.encode(&k))?;
+            entry.set_password(&B64.encode(k))?;
             Ok(Zeroizing::new(k))
         }
         Err(e) => Err(VaultError::Keyring(e)),
@@ -163,7 +163,7 @@ impl VaultStore {
         out.extend_from_slice(&nonce_bytes);
         out.extend_from_slice(&ciphertext);
 
-        let dir = self.path.parent().ok_or_else(|| VaultError::Io(std::io::Error::new(std::io::ErrorKind::Other, "no parent dir")))?;
+        let dir = self.path.parent().ok_or_else(|| VaultError::Io(std::io::Error::other("no parent dir")))?;
         std::fs::create_dir_all(dir)?;
         let mut tmp = tempfile::NamedTempFile::new_in(dir)?;
         tmp.write_all(&out)?;
