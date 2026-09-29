@@ -71,7 +71,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
           <h3>Passphrase</h3>
           <label>Nombre de mots : {phraseOpts.words}
             <input
-              type="range" min={4} max={12} value={phraseOpts.words}
+              type="range" min={5} max={12} value={phraseOpts.words}
               aria-label="Nombre de mots de la passphrase"
               aria-valuetext={`${phraseOpts.words} mots`}
               onChange={(e) => setPhraseOpts({ words: Number(e.target.value) })}

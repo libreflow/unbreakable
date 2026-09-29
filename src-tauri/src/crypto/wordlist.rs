@@ -10,9 +10,13 @@ const ES_BYTES: &str = include_str!("../../wordlists/eff_large_es.txt");
 const IT_BYTES: &str = include_str!("../../wordlists/eff_large_it.txt");
 
 const WORDS_PER_LIST: usize = 7776;
-const BITS_PER_WORD: f64 = 12.924812503605781; // log2(7776)
+const BITS_PER_WORD: f64 = 12.924_812_503_605_78; // log2(7776)
 const MIN_ENTROPY_BITS: f64 = 64.0; // 5 words = 5 * log2(7776) ≈ 64.62 bits; floor at 64.0 to pass 5-word passphrases
-const MIN_WORD_COUNT: u8 = 4;
+// 4 words tops out at 4*12.92 + 2*log2(10) ≈ 58.3 bits even with digit+symbol appended —
+// always below MIN_ENTROPY_BITS, so 4 would be accepted by the range check yet always
+// rejected by the entropy check. Floor at 5 so the range check reflects a value that can
+// actually succeed (audit finding: UI slider allowed 4, silently failing every generation).
+const MIN_WORD_COUNT: u8 = 5;
 const MAX_WORD_COUNT: u8 = 12;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
@@ -63,7 +67,7 @@ pub fn generate_passphrase(
     include_digit: bool,
     include_symbol: bool,
 ) -> Result<Zeroizing<String>, UnbreakableError> {
-    if word_count < MIN_WORD_COUNT || word_count > MAX_WORD_COUNT {
+    if !(MIN_WORD_COUNT..=MAX_WORD_COUNT).contains(&word_count) {
         return Err(UnbreakableError::InvalidOptions(format!(
             "word_count {} out of [{}..{}]",
             word_count, MIN_WORD_COUNT, MAX_WORD_COUNT
