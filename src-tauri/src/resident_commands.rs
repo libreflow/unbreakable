@@ -83,6 +83,19 @@ pub fn notify_clipboard_cleared<R: Runtime>(app: AppHandle<R>) -> Result<(), Str
 }
 
 #[tauri::command]
+pub fn notify_generation_failed<R: Runtime>(
+    app: AppHandle<R>,
+    message: String,
+) -> Result<(), String> {
+    app.notification()
+        .builder()
+        .title("Unbreakable")
+        .body(format!("Génération impossible : {message}"))
+        .show()
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn set_tray_active<R: Runtime>(app: AppHandle<R>, active: bool) -> Result<(), String> {
     tray::set_active(&app, active)
 }

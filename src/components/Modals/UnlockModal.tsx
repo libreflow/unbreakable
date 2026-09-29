@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { vault } from "../../utils/vault";
 
 type Props = {
@@ -13,6 +13,14 @@ export function UnlockModal({ onUnlocked, onForgotten }: Props) {
   const [forgotArmed, setForgotArmed] = useState(false);
   const [delayUntil, setDelayUntil] = useState<number>(0);
 
+  // L1: re-render every 250ms while a backoff is active so the countdown
+  // ticks and the inputs re-enable the moment the delay expires.
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    if (!delayUntil) return;
+    const id = window.setInterval(() => forceTick((n) => n + 1), 250);
+    return () => window.clearInterval(id);
+  }, [delayUntil]);
   const remaining = Math.max(0, delayUntil - Date.now());
 
   async function tryUnlock(e: React.FormEvent) {

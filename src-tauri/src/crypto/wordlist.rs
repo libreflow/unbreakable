@@ -111,6 +111,7 @@ pub fn generate_passphrase(
     }
     if include_symbol {
         const SYMS: &[char] = &['!', '@', '#', '$', '%', '&', '*', '?', '+', '='];
+        out.push(separator);
         out.push(SYMS[os_rand_below(SYMS.len())?]);
     }
 

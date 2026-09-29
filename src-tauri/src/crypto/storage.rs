@@ -223,6 +223,9 @@ impl VaultStore {
         let mut tmp = tempfile::NamedTempFile::new_in(dir)?;
         tmp.write_all(&out)?;
         tmp.flush()?;
+        // fsync before the atomic rename so a power cut can't leave a
+        // truncated (corrupted) vault behind after the rename lands.
+        tmp.as_file().sync_all()?;
         tmp.persist(&self.path)
             .map_err(|e| VaultError::Io(e.error))?;
         Ok(())

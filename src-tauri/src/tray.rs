@@ -32,13 +32,29 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
         None::<&str>,
     )
     .map_err(|e| e.to_string())?;
+    let gen_memorable = MenuItem::with_id(
+        app,
+        "tray-gen-memorable",
+        "Générer & copier mémorable FR",
+        true,
+        None::<&str>,
+    )
+    .map_err(|e| e.to_string())?;
     let quit = MenuItem::with_id(app, "tray-quit", "Quitter", true, None::<&str>)
         .map_err(|e| e.to_string())?;
     let sep1 = PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?;
     let sep2 = PredefinedMenuItem::separator(app).map_err(|e| e.to_string())?;
     let menu = Menu::with_items(
         app,
-        &[&gen_pwd, &gen_phrase, &sep1, &open_item, &sep2, &quit],
+        &[
+            &gen_pwd,
+            &gen_phrase,
+            &gen_memorable,
+            &sep1,
+            &open_item,
+            &sep2,
+            &quit,
+        ],
     )
     .map_err(|e| e.to_string())?;
 
@@ -54,10 +70,13 @@ pub fn install<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
                     let _ = w.set_focus();
                 }
             }
-            "tray-gen-pwd" | "tray-gen-phrase" => {
+            "tray-gen-pwd" | "tray-gen-phrase" | "tray-gen-memorable" => {
                 if let Some(w) = app.get_webview_window("main") {
-                    let kind = if event.id.as_ref() == "tray-gen-pwd" {
+                    let id = event.id.as_ref();
+                    let kind = if id == "tray-gen-pwd" {
                         "password"
+                    } else if id == "tray-gen-memorable" {
+                        "memorable"
                     } else {
                         "passphrase"
                     };

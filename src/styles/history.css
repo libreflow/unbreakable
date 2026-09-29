@@ -71,3 +71,43 @@
 }
 
 .confirm-clear button { text-transform: uppercase; letter-spacing: 0.1em; }
+
+.history-search {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.history-search:focus-visible {
+  outline: none;
+  border-color: var(--acid);
+  box-shadow: 0 0 10px rgba(0, 230, 138, 0.25);
+}
+
+.history-label {
+  background: none;
+  border: 1px dashed var(--rule);
+  border-radius: 6px;
+  color: var(--ink-faint);
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: text;
+  align-self: flex-start;
+}
+.history-label:hover { color: var(--acid); border-color: var(--acid); }
+
+.history-label-input {
+  align-self: flex-start;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--acid);
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 12px;
+  box-shadow: 0 0 10px rgba(0, 230, 138, 0.25);
+}

@@ -19,6 +19,7 @@ export function SecuritySection() {
   const [formError, setFormError] = useState<string | null>(null);
   const [disablePwArmed, setDisablePwArmed] = useState(false);
   const lang = useSettings((s) => s.passphrase_lang);
+  const screenshotProtection = useSettings((s) => s.screenshot_protection);
   const setSettings = useSettings((s) => s.set);
 
   async function refresh() {
@@ -112,7 +113,25 @@ export function SecuritySection() {
       </div>
       <div className="row">
         <label>Anti-capture d'écran</label>
-        <span>{protectionOk ? "✓ Supporté" : "✗ Non supporté sur ce système"}</span>
+        {protectionOk ? (
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={screenshotProtection}
+              onChange={(e) => setSettings({ screenshot_protection: e.target.checked })}
+            />
+            {screenshotProtection ? "Actif" : "Désactivé"}
+          </label>
+        ) : (
+          <span>✗ Non supporté sur ce système</span>
+        )}
+      </div>
+      <div className="row">
+        <span className="warning">
+          ⓘ Le presse-papiers OS est accessible à tout processus tournant sous votre
+          session. Le TTL limite l'exposition mais ne protège pas contre un
+          logiciel de surveillance clipboard déjà présent sur le poste.
+        </span>
       </div>
       <div className="row">
         <label>Keystore OS</label>

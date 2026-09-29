@@ -36,6 +36,8 @@ export const useSettings = create<SettingsState>()(
           shortcut_combo: old.shortcut_combo ?? "CommandOrControl+Alt+P",
           notifications_enabled: old.notifications_enabled ?? false,
           passphrase_lang: (old.passphrase_lang as PassphraseLang | undefined) ?? detectLang(),
+          screenshot_protection: old.screenshot_protection ?? true,
+          memorable_default: old.memorable_default ?? false,
         } as never;
       },
     },

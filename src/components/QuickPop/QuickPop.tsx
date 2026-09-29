@@ -50,7 +50,7 @@ export function QuickPop() {
   const copySecret = useCopySecret();
   const copy = async () => {
     if (!secret) return;
-    await copySecret(defaultKind, secret, { crossWindow: true });
+    await copySecret(defaultKind, secret, { crossWindow: true, skipHistory: true });
     getCurrentWebviewWindow().close();
   };
 

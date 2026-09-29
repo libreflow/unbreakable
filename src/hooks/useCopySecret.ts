@@ -20,11 +20,16 @@ export function useCopySecret() {
   const addHistory = useHistory((s) => s.add);
 
   return useCallback(
-    async (kind: CopiedPanel, secret: string, opts?: { notify?: boolean; crossWindow?: boolean }) => {
+    async (kind: CopiedPanel, secret: string, opts?: { notify?: boolean; crossWindow?: boolean; skipHistory?: boolean }) => {
       const { ttl_seconds, notifications_enabled } = useSettings.getState();
       await copyToClipboard(secret);
       setCopied(kind, ttl_seconds);
-      addHistory(kind, secret, analyzeStrength(secret).score);
+      // QuickPop's history store is not hydrated (vault lives in the main
+      // window); skip the history write there to avoid clobbering the
+      // encrypted vault with an unhydrated store.
+      if (opts?.skipHistory !== true) {
+        addHistory(kind, secret, analyzeStrength(secret).score);
+      }
       if (opts?.crossWindow) {
         emitSecretCopied({ kind, ttl: ttl_seconds }).catch(() => {});
       }

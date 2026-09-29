@@ -18,6 +18,9 @@ export async function showQuickWindow(): Promise<void> {
 export async function notifyCopied(kind: "password" | "passphrase", ttl: number): Promise<void> {
   return invoke("notify_copied", { kind, ttl });
 }
+export async function notifyGenerationFailed(message: string): Promise<void> {
+  return invoke("notify_generation_failed", { message });
+}
 export async function notifyClipboardCleared(): Promise<void> {
   return invoke("notify_clipboard_cleared");
 }

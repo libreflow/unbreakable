@@ -13,12 +13,13 @@ import { useGenerator } from "./stores/generatorStore";
 import { useClipboard } from "./stores/clipboardStore";
 import { useSettings } from "./stores/settingsStore";
 import { useHistory } from "./stores/historyStore";
-import { generatePassphraseFromOpts, generatePassword } from "./utils/tauriCommands";
+import { generateMemorable, generatePassphraseFromOpts, generatePassword } from "./utils/tauriCommands";
 import { vault } from "./utils/vault";
+import { setWindowProtected } from "./utils/windowProtection";
 import { reportError } from "./utils/reportError";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { listenClipboardCleared, listenSecretCopied } from "./utils/crossWindowEvents";
-import { notifyClipboardCleared, enableTray, enableAutostart, registerShortcut } from "./utils/residentCommands";
+import { notifyClipboardCleared, enableTray, enableAutostart, registerShortcut, notifyGenerationFailed } from "./utils/residentCommands";
 import { UnlockModal } from "./components/Modals/UnlockModal";
 import { MigrationModal, detectLegacyCount } from "./components/Modals/MigrationModal";
 
@@ -36,7 +37,8 @@ type BootState =
   | { phase: "loading" }
   | { phase: "unlock" }
   | { phase: "migrate"; count: number }
-  | { phase: "ready" };
+  | { phase: "ready" }
+  | { phase: "error"; message: string };
 
 /** A6: race-free async listener subscription. The unlisten promise is
  * tracked so a fast unmount cancels the listener as soon as it lands. */
@@ -73,6 +75,13 @@ function App() {
 
   const copySecret = useCopySecret();
 
+  const screenshotProtection = useSettings((s) => s.screenshot_protection);
+  useEffect(() => {
+    setWindowProtected("main", screenshotProtection).catch((e) =>
+      reportError("windowProtection", e),
+    );
+  }, [screenshotProtection]);
+
   useEffect(() => {
     applyTheme(theme);
     if (theme === "auto") {
@@ -97,7 +106,9 @@ function App() {
         }
       } catch (err) {
         reportError("boot", err);
-        setBoot({ phase: "ready" });
+        // L3: surface the failure instead of fail-open - a silent "ready"
+        // app would silently drop every history save for the session.
+        setBoot({ phase: "error", message: String(err) });
       }
     })();
   }, []);
@@ -116,6 +127,7 @@ function App() {
     } catch (e) {
       reportError("regenerate", e);
       setGenError(String(e));
+      notifyGenerationFailed(String(e)).catch(() => {});
     }
   }, []);
 
@@ -129,10 +141,26 @@ function App() {
     if (passphrase) await copySecret("passphrase", passphrase);
   }, [passphrase, copySecret]);
 
+  // Ctrl+M toggles the memorable FR mode; persisted via settings so the
+  // next session boots in the same mode.
+  const toggleMemorable = useCallback(() => {
+    const next = !useSettings.getState().memorable_default;
+    useSettings.getState().set({ memorable_default: next });
+    const g = useGenerator.getState();
+    if (next) {
+      generateMemorable().then(g.setPassword).catch((e) => reportError("memorable", e));
+    } else {
+      generatePassword(g.pwdOpts)
+        .then(g.setPassword)
+        .catch((e) => reportError("password", e));
+    }
+  }, []);
+
   useKeyboardShortcuts({
     regenerate,
     copyPassword: copyPwd,
     copyPassphrase: copyPhrase,
+    toggleMemorable,
     toggleHistory: () => setHistoryOpen((o) => !o),
     toggleSettings: () => setSettingsOpen((o) => !o),
   });
@@ -186,17 +214,20 @@ function App() {
   useAsyncListener(
     () =>
       listen<string>("tray-generate-and-copy", async (e) => {
-        const kind = e.payload === "passphrase" ? "passphrase" : "password";
+        const kind =
+          e.payload === "passphrase" ? "passphrase" : e.payload === "memorable" ? "memorable" : "password";
         try {
           const opts = useGenerator.getState();
           const lang = useSettings.getState().passphrase_lang;
           const secret =
             kind === "password"
               ? await generatePassword(opts.pwdOpts)
-              : await generatePassphraseFromOpts(opts.phraseOpts, lang);
-          if (kind === "password") useGenerator.getState().setPassword(secret);
-          else useGenerator.getState().setPassphrase(secret);
-          await copySecret(kind, secret);
+              : kind === "memorable"
+                ? await generateMemorable()
+                : await generatePassphraseFromOpts(opts.phraseOpts, lang);
+          if (kind === "passphrase") useGenerator.getState().setPassphrase(secret);
+          else useGenerator.getState().setPassword(secret);
+          await copySecret(kind === "memorable" ? "password" : kind, secret);
         } catch (err) {
           reportError("tray-generate-and-copy", err);
         }
@@ -227,6 +258,19 @@ function App() {
           setBoot({ phase: "ready" });
         }}
       />
+    );
+  }
+
+  if (boot.phase === "error") {
+    return (
+      <div className="modal-overlay">
+        <div className="modal" role="alertdialog" aria-label="Erreur au démarrage">
+          <h2>Erreur au démarrage</h2>
+          <p>Le coffre n'a pas pu être ouvert. L'application ne peut pas garantir la sauvegarde de l'historique.</p>
+          <div className="error">{boot.message}</div>
+          <button onClick={() => window.location.reload()}>Réessayer</button>
+        </div>
+      </div>
     );
   }
 
@@ -283,6 +327,7 @@ function App() {
               <div><dt><kbd>Ctrl</kbd>+<kbd>R</kbd> · <kbd>Espace</kbd></dt><dd>Régénérer</dd></div>
               <div><dt><kbd>Ctrl</kbd>+<kbd>C</kbd></dt><dd>Copier le mot de passe</dd></div>
               <div><dt><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd></dt><dd>Copier la passphrase</dd></div>
+              <div><dt><kbd>Ctrl</kbd>+<kbd>M</kbd></dt><dd>Mode mémorable FR</dd></div>
               <div><dt><kbd>Ctrl</kbd>+<kbd>H</kbd></dt><dd>Historique</dd></div>
               <div><dt><kbd>Ctrl</kbd>+<kbd>,</kbd></dt><dd>Paramètres</dd></div>
               <div><dt><kbd>?</kbd></dt><dd>Cette aide</dd></div>

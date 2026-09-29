@@ -22,6 +22,7 @@ interface HistoryState {
   hydrate: () => Promise<void>;
   add: (kind: CopiedPanel, plain: string, score: number, label?: string) => void;
   remove: (id: string) => void;
+  rename: (id: string, label: string) => void;
   clear: () => void;
   purgeFromRam: () => void;
 }
@@ -71,6 +72,13 @@ export const useHistory = create<HistoryState>((set, get) => {
 
   remove: (id) => {
     const next = get().entries.filter((e) => e.id !== id);
+    set({ entries: next });
+    debouncedSave(next);
+  },
+  rename: (id, label) => {
+    const next = get().entries.map((e) =>
+      e.id === id ? { ...e, label: label.trim() || null } : e,
+    );
     set({ entries: next });
     debouncedSave(next);
   },

@@ -99,8 +99,8 @@ export function SecretPanel({
 /** Regeneration logic per panel kind, wired to the generator store. */
 export function usePanelRegenerate(kind: PanelKind) {
   const set = useGenerator((s) => (kind === "password" ? s.setPassword : s.setPassphrase));
+  const memorable = useSettings((s) => s.memorable_default);
   const [err, setErr] = useState<string | null>(null);
-  const [memorable, setMemorable] = useState(false);
 
   const regenerate = useMemo(
     () => async () => {
@@ -120,11 +120,10 @@ export function usePanelRegenerate(kind: PanelKind) {
         setErr(String(e));
       }
     },
-    // A8: memorable is a dependency on purpose - toggling it re-runs the
-    // memo and the caller re-invokes regenerate from the onChange handler,
-    // not from an effect.
+    // A8: memorable is a dependency on purpose; the mode toggle lives in
+    // settingsStore (persisted) and the panel effect re-invokes on change.
     [kind, memorable, set],
   );
 
-  return { regenerate, err, setErr, memorable, setMemorable };
+  return { regenerate, err, setErr };
 }

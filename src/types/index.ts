@@ -33,6 +33,8 @@ export interface AppSettings {
   shortcut_combo: string;
   notifications_enabled: boolean;
   passphrase_lang: PassphraseLang;
+  screenshot_protection: boolean;
+  memorable_default: boolean;
 }
 
 export const DEFAULT_PASSWORD_OPTS: PasswordOptions = {
@@ -65,4 +67,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   shortcut_combo: "CommandOrControl+Alt+P",
   notifications_enabled: false,
   passphrase_lang: "en",
+  screenshot_protection: true,
+  memorable_default: false,
 };

@@ -1,22 +1,28 @@
 import { useGenerator } from "../../stores/generatorStore";
+import { useSettings } from "../../stores/settingsStore";
 import { SecretPanel, usePanelRegenerate } from "../Panels/SecretPanel";
+import { reportError } from "../../utils/reportError";
+import { useEffect } from "react";
 
 export function PasswordPanel() {
-  const { regenerate, err, memorable, setMemorable } = usePanelRegenerate("password");
+  const memorable = useSettings((s) => s.memorable_default);
+  const setSettings = useSettings((s) => s.set);
   const secret = useGenerator((s) => s.password);
+  const { regenerate, err } = usePanelRegenerate("password");
   const meta = memorable ? "mémorable FR · 14-20" : `${secret.length} chars · site-compat`;
 
-  // A8: toggling the mode regenerates via the event handler itself,
-  // not through an effect with disabled lint rules.
+  // Boot + mode persistence: regenerate through the shared pipeline
+  // whenever the mode (re)starts, so the panel never shows a secret of
+  // the wrong mode after a restart (memorable_default is persisted).
+  useEffect(() => {
+    regenerate().catch((e) => reportError("panel boot regenerate", e));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memorable]);
+
   const toggleMemorable = () => {
     const next = !memorable;
-    setMemorable(next);
-    // regenerate is recreated by the memo when memorable flips; use the
-    // freshest one via a microtask so state has propagated.
-    queueMicrotask(() => {
-      useGenerator.getState();
-      regenerate().catch(() => {});
-    });
+    // Persist the choice; the effect above triggers the regeneration.
+    setSettings({ memorable_default: next });
   };
 
   return (
@@ -29,7 +35,7 @@ export function PasswordPanel() {
         <div className="panel-mode">
           <label className="mode-toggle">
             <input type="checkbox" checked={memorable} onChange={toggleMemorable} />
-            <span>Mot de passe mémorable (mots français)</span>
+            <span>Mot de passe mémorable (mots français) · Ctrl+M</span>
           </label>
         </div>
       }

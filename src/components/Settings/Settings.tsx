@@ -55,9 +55,29 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
 
         <section>
           <h3>Mot de passe</h3>
+          <div className="row">
+            <label>Presets</label>
+            <div className="stack">
+              <button
+                onClick={() =>
+                  setPwdOpts({
+                    length: 16,
+                    uppercase: true,
+                    lowercase: true,
+                    digits: true,
+                    symbols: true,
+                    exclude_ambiguous: true,
+                    min_per_group: 1,
+                  })
+                }
+              >
+                AD (16 chars · complexité GPO)
+              </button>
+            </div>
+          </div>
           <label>Longueur : {pwdOpts.length}
             <input
-              type="range" min={8} max={128} value={pwdOpts.length}
+              type="range" min={12} max={128} value={pwdOpts.length}
               aria-label="Longueur du mot de passe"
               aria-valuetext={`${pwdOpts.length} caractères`}
               onChange={(e) => setPwdOpts({ length: Number(e.target.value) })}
