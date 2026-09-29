@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { vault, HistoryEntry } from "../../utils/vault";
+import { useSettings } from "../../stores/settingsStore";
 
 const LEGACY_KEY = "unbreakable.history";
 
@@ -40,7 +41,8 @@ export function MigrationModal({ count, onDone }: Props) {
         created_at: typeof e.created_at === "number" ? new Date(e.created_at).toISOString() : e.created_at,
       }));
       const existing = await vault.load();
-      await vault.save([...existing, ...entries].slice(0, 200));
+      const max = useSettings.getState().history_max || 200;
+      await vault.save([...existing, ...entries].slice(0, max));
       localStorage.removeItem(LEGACY_KEY);
       onDone();
     } catch (err) {
