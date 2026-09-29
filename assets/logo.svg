@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#0c1a20"/>
+      <stop offset="100%" stop-color="#060a0c"/>
+    </radialGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00e68a"/>
+      <stop offset="100%" stop-color="#00a860"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="round">
+      <rect x="0" y="0" width="1024" height="1024" rx="220" ry="220"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#round)">
+    <rect width="1024" height="1024" fill="url(#bg)"/>
+
+    <g stroke="#0e2a24" stroke-width="2" opacity="0.5">
+      <path d="M0 128 H1024"/>
+      <path d="M0 256 H1024"/>
+      <path d="M0 384 H1024"/>
+      <path d="M0 512 H1024"/>
+      <path d="M0 640 H1024"/>
+      <path d="M0 768 H1024"/>
+      <path d="M0 896 H1024"/>
+    </g>
+
+    <g opacity="0.12" stroke="#00e68a" stroke-width="3">
+      <path d="M512 96 L880 260 V540 C880 740 720 880 512 930 C304 880 144 740 144 540 V260 Z" fill="none"/>
+    </g>
+
+    <g filter="url(#glow)">
+      <path d="M512 108 L848 252 V548 C848 726 704 856 512 906 C320 856 176 726 176 548 V252 Z"
+            fill="none" stroke="url(#shield)" stroke-width="30" stroke-linejoin="round"/>
+
+      <path d="M512 108 L848 252 V548 C848 726 704 856 512 906 C320 856 176 726 176 548 V252 Z"
+            fill="#00e68a" opacity="0.07"/>
+    </g>
+
+    <g filter="url(#glow)">
+      <circle cx="512" cy="440" r="86" fill="none" stroke="#00e68a" stroke-width="34"/>
+      <rect x="481" y="500" width="62" height="196" rx="31" fill="#00e68a"/>
+    </g>
+
+    <g stroke="#00e68a" stroke-width="4" opacity="0.35" fill="none">
+      <path d="M330 220 l40 40 M370 218 l-6 44"/>
+      <path d="M694 220 l-40 40 M654 218 l6 44"/>
+      <path d="M512 100 v-0"/>
+    </g>
+  </g>
+</svg>
