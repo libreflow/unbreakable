@@ -218,7 +218,7 @@ mod tests {
         );
         assert!(words.iter().all(|w| {
             let l = w.chars().count();
-            (MIN_WORD_LEN..=MAX_WORD_LEN).contains(&l)
+            (MIN_WORD_LEN..=MAX_WORD_LEN).contains(&l) && w.is_ascii()
         }));
     }
 }
