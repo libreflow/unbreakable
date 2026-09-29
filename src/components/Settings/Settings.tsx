@@ -8,7 +8,10 @@ import { SecuritySection } from "./SecuritySection";
 
 export function Settings({ open, onClose }: { open: boolean; onClose: () => void }) {
   const s = useSettings();
-  const { pwdOpts, setPwdOpts, phraseOpts, setPhraseOpts } = useGenerator();
+  const pwdOpts = useGenerator((g) => g.pwdOpts);
+  const setPwdOpts = useGenerator((g) => g.setPwdOpts);
+  const phraseOpts = useGenerator((g) => g.phraseOpts);
+  const setPhraseOpts = useGenerator((g) => g.setPhraseOpts);
   const dialogRef = useRef<HTMLElement>(null);
   useDialogFocus(open, dialogRef);
 

@@ -1,0 +1,65 @@
+/* ============================================================
+   Strength meter
+   ============================================================ */
+
+.strength {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+
+.strength-segments {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  height: 6px;
+}
+
+.seg {
+  background: var(--paper-3);
+  border-radius: 3px;
+  transition: background 280ms ease;
+}
+
+.panel[data-score="0"] .seg:nth-child(-n+1) { background: var(--score-0); box-shadow: 0 0 8px rgba(255, 71, 87, 0.4); }
+.panel[data-score="1"] .seg:nth-child(-n+1) { background: var(--score-1); }
+.panel[data-score="2"] .seg:nth-child(-n+2) { background: var(--score-2); }
+.panel[data-score="3"] .seg:nth-child(-n+3) { background: var(--score-3); }
+.panel[data-score="4"] .seg:nth-child(-n+4) { background: var(--score-4); box-shadow: 0 0 10px var(--acid-soft); }
+
+.strength-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.strength-meta .label { color: var(--ink); font-weight: 600; }
+
+.unbreakable-stamp {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+  color: var(--paper);
+  background: var(--acid);
+  border: 1px solid var(--acid);
+  border-radius: var(--radius);
+  padding: 3px 8px 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-shadow: none;
+  box-shadow: 0 0 14px rgba(0, 230, 138, 0.3);
+  animation: stamp-in 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes stamp-in {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}

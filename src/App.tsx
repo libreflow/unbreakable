@@ -8,17 +8,17 @@ import { History } from "./components/History/History";
 import { useAutoGenerate } from "./hooks/useAutoGenerate";
 import { useDialogFocus } from "./hooks/useDialogFocus";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useCopySecret } from "./hooks/useCopySecret";
 import { useGenerator } from "./stores/generatorStore";
 import { useClipboard } from "./stores/clipboardStore";
 import { useSettings } from "./stores/settingsStore";
 import { useHistory } from "./stores/historyStore";
-import {
-  copyToClipboard,
-  generatePassphraseFromOpts,
-  generatePassword,
-} from "./utils/tauriCommands";
-import { analyzeStrength } from "./utils/strength";
+import { generatePassphraseFromOpts, generatePassword } from "./utils/tauriCommands";
 import { vault } from "./utils/vault";
+import { reportError } from "./utils/reportError";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { listenClipboardCleared, listenSecretCopied } from "./utils/crossWindowEvents";
+import { notifyClipboardCleared, enableTray, enableAutostart, registerShortcut } from "./utils/residentCommands";
 import { UnlockModal } from "./components/Modals/UnlockModal";
 import { MigrationModal, detectLegacyCount } from "./components/Modals/MigrationModal";
 
@@ -38,6 +38,24 @@ type BootState =
   | { phase: "migrate"; count: number }
   | { phase: "ready" };
 
+/** A6: race-free async listener subscription. The unlisten promise is
+ * tracked so a fast unmount cancels the listener as soon as it lands. */
+function useAsyncListener(setup: () => Promise<UnlistenFn>, deps: unknown[] = []) {
+  useEffect(() => {
+    let cancelled = false;
+    let unlisten: UnlistenFn | null = null;
+    setup().then((fn) => {
+      if (cancelled) fn();
+      else unlisten = fn;
+    }).catch((e) => reportError("listener setup", e));
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+}
+
 function App() {
   useAutoGenerate();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -47,13 +65,13 @@ function App() {
   useDialogFocus(helpOpen, helpCardRef);
 
   const theme = useSettings((s) => s.theme);
-  const ttl = useSettings((s) => s.ttl_seconds);
-  const { pwdOpts, phraseOpts, setPassword, setPassphrase, password, passphrase } = useGenerator();
-  const setCopied = useClipboard((s) => s.setCopied);
-  const addHistory = useHistory((s) => s.add);
+  const password = useGenerator((s) => s.password);
+  const passphrase = useGenerator((s) => s.passphrase);
 
   const [boot, setBoot] = useState<BootState>({ phase: "loading" });
   const [genError, setGenError] = useState<string | null>(null);
+
+  const copySecret = useCopySecret();
 
   useEffect(() => {
     applyTheme(theme);
@@ -78,14 +96,15 @@ function App() {
           setBoot(legacy > 0 ? { phase: "migrate", count: legacy } : { phase: "ready" });
         }
       } catch (err) {
-        console.error("boot failed:", err);
-        setBoot({ phase: "ready" }); // fail-open to avoid bricking
+        reportError("boot", err);
+        setBoot({ phase: "ready" });
       }
     })();
   }, []);
 
   const regenerate = useCallback(async () => {
     try {
+      const { pwdOpts, phraseOpts, setPassword, setPassphrase } = useGenerator.getState();
       const lang = useSettings.getState().passphrase_lang;
       const [p, ph] = await Promise.all([
         generatePassword(pwdOpts),
@@ -95,25 +114,20 @@ function App() {
       setPassphrase(ph);
       setGenError(null);
     } catch (e) {
-      // B10: surface generation failures instead of failing silently.
-      console.error(e);
+      reportError("regenerate", e);
       setGenError(String(e));
     }
-  }, [pwdOpts, phraseOpts, setPassword, setPassphrase]);
+  }, []);
 
+  // A1: the copy pipeline lives in useCopySecret - shortcuts below are
+  // thin wrappers over the same single implementation.
   const copyPwd = useCallback(async () => {
-    if (!password) return;
-    await copyToClipboard(password);
-    setCopied("password", ttl);
-    addHistory("password", password, analyzeStrength(password).score);
-  }, [password, setCopied, ttl, addHistory]);
+    if (password) await copySecret("password", password);
+  }, [password, copySecret]);
 
   const copyPhrase = useCallback(async () => {
-    if (!passphrase) return;
-    await copyToClipboard(passphrase);
-    setCopied("passphrase", ttl);
-    addHistory("passphrase", passphrase, analyzeStrength(passphrase).score);
-  }, [passphrase, setCopied, ttl, addHistory]);
+    if (passphrase) await copySecret("passphrase", passphrase);
+  }, [passphrase, copySecret]);
 
   useKeyboardShortcuts({
     regenerate,
@@ -138,76 +152,57 @@ function App() {
   }, []);
 
   // Boot replay — re-applies resident-mode toggles after restart.
-  // Safe to read getState() synchronously because Zustand persist uses
-  // sync localStorage; if storage ever switches to async (IndexedDB, Tauri
-  // store), this needs to await hydration first.
   useEffect(() => {
     (async () => {
-      const {
-        enableTray, enableAutostart, registerShortcut,
-      } = await import("./utils/residentCommands");
       const s = useSettings.getState();
       try {
         if (s.tray_enabled) await enableTray(true);
         if (s.autostart_enabled) await enableAutostart(true);
         if (s.shortcut_enabled) await registerShortcut(s.shortcut_combo);
-      } catch (e) { console.error("resident-mode boot replay failed", e); }
+      } catch (e) {
+        reportError("resident-mode boot replay", e);
+      }
     })();
   }, []);
 
-  useEffect(() => {
-    let unlisten: (() => void) | null = null;
-    (async () => {
-      const { listenClipboardCleared } = await import("./utils/crossWindowEvents");
-      const { notifyClipboardCleared } = await import("./utils/residentCommands");
-      unlisten = await listenClipboardCleared(() => {
-        if (useSettings.getState().notifications_enabled) {
-          notifyClipboardCleared().catch(() => {});
-        }
-      });
-    })();
-    return () => { unlisten?.(); };
-  }, []);
+  useAsyncListener(
+    () => listenClipboardCleared(() => {
+      if (useSettings.getState().notifications_enabled) {
+        notifyClipboardCleared().catch((e) => reportError("notifyClipboardCleared", e));
+      }
+    }),
+    [],
+  );
 
   // B1: arm TTL timer when QuickPop (or any other window) copies a secret.
-  useEffect(() => {
-    let unlisten: (() => void) | null = null;
-    (async () => {
-      const { listenSecretCopied } = await import("./utils/crossWindowEvents");
-      unlisten = await listenSecretCopied(({ kind, ttl: t }) => {
-        useClipboard.getState().setCopied(kind, t);
-      });
-    })();
-    return () => { unlisten?.(); };
-  }, []);
+  useAsyncListener(
+    () => listenSecretCopied(({ kind, ttl: t }) => {
+      useClipboard.getState().setCopied(kind, t);
+    }),
+    [],
+  );
 
   // B2: tray "Générer & copier" menu items emit this event with the kind.
-  useEffect(() => {
-    let unlisten: (() => void) | null = null;
-    (async () => {
-      const { listen } = await import("@tauri-apps/api/event");
-      unlisten = await listen<string>("tray-generate-and-copy", async (e) => {
+  useAsyncListener(
+    () =>
+      listen<string>("tray-generate-and-copy", async (e) => {
         const kind = e.payload === "passphrase" ? "passphrase" : "password";
         try {
           const opts = useGenerator.getState();
-          const secret = kind === "password"
-            ? await generatePassword(opts.pwdOpts)
-            : await generatePassphraseFromOpts(opts.phraseOpts, useSettings.getState().passphrase_lang);
-          if (kind === "password") setPassword(secret);
-          else setPassphrase(secret);
-          await copyToClipboard(secret);
-          const settings = useSettings.getState();
-          setCopied(kind, settings.ttl_seconds);
-          addHistory(kind, secret, analyzeStrength(secret).score);
-          if (settings.notifications_enabled) {
-            const { notifyCopied } = await import("./utils/residentCommands");
-            notifyCopied(kind, settings.ttl_seconds).catch(() => {});
-          }
-        } catch (err) { console.error("tray-generate-and-copy failed", err); }
-      });
-    })();
-    return () => { unlisten?.(); };
-  }, [setCopied, addHistory, setPassword, setPassphrase]);
+          const lang = useSettings.getState().passphrase_lang;
+          const secret =
+            kind === "password"
+              ? await generatePassword(opts.pwdOpts)
+              : await generatePassphraseFromOpts(opts.phraseOpts, lang);
+          if (kind === "password") useGenerator.getState().setPassword(secret);
+          else useGenerator.getState().setPassphrase(secret);
+          await copySecret(kind, secret);
+        } catch (err) {
+          reportError("tray-generate-and-copy", err);
+        }
+      }),
+    [copySecret],
+  );
 
   if (boot.phase === "loading") {
     return <div className="boot-loading">Chargement…</div>;
@@ -222,8 +217,13 @@ function App() {
           setBoot(legacy > 0 ? { phase: "migrate", count: legacy } : { phase: "ready" });
         }}
         onForgotten={async (pw) => {
-          if (!confirm("Effacer le coffre et perdre tout l'historique ?")) return;
-          try { await vault.clear(pw || null); } catch (e) { console.error("vault.clear failed:", e); }
+          try {
+            await vault.clear(pw || null);
+            await vault.unlock(null);
+            await useHistory.getState().hydrate();
+          } catch (e) {
+            reportError("vault.clear", e);
+          }
           setBoot({ phase: "ready" });
         }}
       />
@@ -251,7 +251,7 @@ function App() {
         </div>
         <div className="app-tagline">Cipher press · pour un secret prêt à coller, sans détour</div>
         <nav className="app-actions" aria-label="Actions principales">
-          <button className="chip chip-primary" onClick={regenerate} aria-label="Régénérer (Espace)">↻ Régen</button>
+          <button className="chip chip-primary" onClick={regenerate} aria-label="Régénérer (Espace)">↳ Régen</button>
           <button className="chip" onClick={() => setHistoryOpen(true)} aria-label="Historique (Ctrl+H)">Hist</button>
           <button className="chip" onClick={() => setSettingsOpen(true)} aria-label="Paramètres (Ctrl+,)">Réglages</button>
           <button className="chip" onClick={() => setHelpOpen(true)} aria-label="Aide (?)">?</button>

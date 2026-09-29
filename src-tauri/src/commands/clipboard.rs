@@ -95,19 +95,20 @@ pub fn cmd_read_clipboard(app: AppHandle) -> Result<String> {
 /// Returns true if a clear happened, false if user has since modified clipboard.
 #[tauri::command]
 pub fn cmd_clear_if_ours(app: AppHandle, state: State<'_, ClipboardState>) -> Result<bool> {
-    let last = state
+    let guard = state
         .last_written
         .lock()
-        .ok()
-        .and_then(|g| g.as_deref().map(|s| s.to_string()));
-    let Some(last) = last else { return Ok(false) };
+        .map_err(|_| UnbreakableError::Clipboard("lock poisoned".into()))?;
+    let Some(last) = guard.as_deref() else {
+        return Ok(false);
+    };
 
     let current = app
         .clipboard()
         .read_text()
         .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?;
 
-    if current == last {
+    if current.as_str() == last {
         app.clipboard()
             .clear()
             .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?;

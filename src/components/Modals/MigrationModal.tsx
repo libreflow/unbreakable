@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { vault, HistoryEntry } from "../../utils/vault";
 import { useSettings } from "../../stores/settingsStore";
+import { reportError } from "../../utils/reportError";
 
 const LEGACY_KEY = "unbreakable.history";
 
@@ -27,6 +28,8 @@ type Props = { count: number; onDone: () => void };
 
 export function MigrationModal({ count, onDone }: Props) {
   const [working, setWorking] = useState(false);
+  const [eraseArmed, setEraseArmed] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
 
   async function migrate() {
     setWorking(true);
@@ -46,14 +49,17 @@ export function MigrationModal({ count, onDone }: Props) {
       localStorage.removeItem(LEGACY_KEY);
       onDone();
     } catch (err) {
-      console.error("migration failed:", err);
-      alert("Migration échouée: " + String(err));
+      reportError("migration", err);
+      setFailed(String(err));
       setWorking(false);
     }
   }
 
   function erase() {
-    if (!confirm("Effacer définitivement l'historique en clair ?")) return;
+    if (!eraseArmed) {
+      setEraseArmed(true);
+      return;
+    }
     localStorage.removeItem(LEGACY_KEY);
     onDone();
   }
@@ -64,7 +70,16 @@ export function MigrationModal({ count, onDone }: Props) {
         <h2>Migration sécurité</h2>
         <p>{count} mot(s) de passe en clair ont été détectés depuis une version précédente. Le nouveau coffre les chiffrera avec votre keystore OS.</p>
         <button onClick={migrate} disabled={working}>Migrer & chiffrer</button>
-        <button onClick={erase} disabled={working} className="danger">Effacer définitivement</button>
+        {failed && <div className="error-inline" role="alert">Migration échouée : {failed}</div>}
+        {eraseArmed ? (
+          <div className="confirm-clear" role="group" aria-label="Confirmer l'effacement">
+            <span>Effacer sans sauvegarder ?</span>
+            <button onClick={erase} className="danger">Oui, effacer</button>
+            <button onClick={() => setEraseArmed(false)}>Annuler</button>
+          </div>
+        ) : (
+          <button onClick={erase} disabled={working} className="danger">Effacer définitivement</button>
+        )}
       </div>
     </div>
   );

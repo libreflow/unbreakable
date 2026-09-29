@@ -44,9 +44,8 @@ const applyQuickTheme = () => {
 applyQuickTheme();
 
 // B7: keep the QuickPop theme in sync when settings change in the main window.
-import("./utils/crossWindowEvents").then(({ listenSettingsChanged }) =>
-  listenSettingsChanged(applyQuickTheme),
-);
+import { listenSettingsChanged } from "./utils/crossWindowEvents";
+listenSettingsChanged(applyQuickTheme).catch(() => {});
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

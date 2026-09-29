@@ -1,0 +1,84 @@
+/* ============================================================
+   UNBREAKABLE — dark cybersecurity design system
+   ============================================================ */
+
+:root {
+  /* Dark (default) — deep space navy + phosphor green */
+  --ink: #e8f4e8;
+  --ink-dim: #9db8a4;
+  --ink-faint: #5c7263;
+  --paper: #060a0c;
+  --paper-2: #0b1114;
+  --paper-3: #101a1e;
+  --rule: #1b2a30;
+  --rule-strong: #2c4148;
+  --acid: #00e68a;
+  --acid-deep: #00b06e;
+  --acid-soft: rgba(0, 230, 138, 0.10);
+  --warn: #ffb340;
+  --danger: #ff4757;
+  --good: #00e68a;
+  --glow: 0 0 18px rgba(0, 230, 138, 0.25);
+  --scanline: rgba(0, 230, 138, 0.03);
+  --score-0: #ff4757;
+  --score-1: #ff8a3c;
+  --score-2: #ffd60a;
+  --score-3: #a3e635;
+  --score-4: #00e68a;
+
+  --font-display: "Instrument Serif", "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --radius: 6px;
+  --radius-md: 10px;
+}
+
+:root[data-theme="light"] {
+  --ink: #0c1512;
+  --ink-dim: #40584c;
+  --ink-faint: #7a9186;
+  --paper: #f2f7f3;
+  --paper-2: #e7efe8;
+  --paper-3: #d8e4da;
+  --rule: #c2d2c6;
+  --rule-strong: #93aa9a;
+  --acid: #00854f;
+  --acid-deep: #006b40;
+  --acid-soft: rgba(0, 133, 79, 0.10);
+  --glow: none;
+  --scanline: rgba(0, 133, 79, 0.02);
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+  font-feature-settings: "ss01", "cv11";
+}
+
+::selection { background: var(--acid); color: var(--paper); }
+
+/* Radial ambient glow + scanline texture — cybersecurity console feel */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, var(--acid-soft), transparent 60%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      var(--scanline) 3px,
+      var(--scanline) 4px
+    );
+}

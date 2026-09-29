@@ -2,17 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useSettings } from "../../stores/settingsStore";
 import { useGenerator } from "../../stores/generatorStore";
-import { copyToClipboard, generatePassword, generatePassphraseFromOpts } from "../../utils/tauriCommands";
+import { generatePassword, generatePassphraseFromOpts } from "../../utils/tauriCommands";
 import { analyzeStrength } from "../../utils/strength";
-import { emitSecretCopied } from "../../utils/crossWindowEvents";
-import { notifyCopied, showMainWindow } from "../../utils/residentCommands";
+import { showMainWindow } from "../../utils/residentCommands";
+import { useCopySecret } from "../../hooks/useCopySecret";
 import { StrengthMeter } from "../StrengthMeter/StrengthMeter";
 import { setWindowProtected } from "../../utils/windowProtection";
 
 export function QuickPop() {
   const defaultKind = useSettings((s) => s.default_copy);
-  const ttl = useSettings((s) => s.ttl_seconds);
-  const notifEnabled = useSettings((s) => s.notifications_enabled);
   const { pwdOpts, phraseOpts } = useGenerator();
 
   useEffect(() => {
@@ -49,13 +47,10 @@ export function QuickPop() {
 
   const score = useMemo(() => analyzeStrength(secret).score, [secret]);
 
+  const copySecret = useCopySecret();
   const copy = async () => {
     if (!secret) return;
-    await copyToClipboard(secret);
-    await emitSecretCopied({ kind: defaultKind, ttl });
-    if (notifEnabled) {
-      try { await notifyCopied(defaultKind, ttl); } catch (e) { console.error(e); }
-    }
+    await copySecret(defaultKind, secret, { crossWindow: true });
     getCurrentWebviewWindow().close();
   };
 

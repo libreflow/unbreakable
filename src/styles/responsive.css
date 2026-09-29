@@ -1,0 +1,23 @@
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 800px) {
+  .app { padding: 18px 16px 16px; gap: 14px; }
+  .app-header { grid-template-columns: 1fr; gap: 12px; padding-bottom: 12px; }
+  .app-tagline { display: none; }
+  .app-actions { flex-wrap: wrap; }
+  .panels { grid-template-columns: 1fr; }
+  .secret-display { font-size: clamp(18px, 5vw, 24px); }
+  .app::before { display: none; }
+  .hero { padding: 10px 0; min-height: 80px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secret-display,
+  .passphrase-display,
+  .stamp,
+  .unbreakable-stamp { animation: none; }
+  .status-eyebrow::before { animation: none; opacity: 0.6; }
+  .ttl-progress { transition: none; }
+}

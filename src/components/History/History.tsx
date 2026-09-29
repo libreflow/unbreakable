@@ -11,7 +11,10 @@ function formatDate(ts: string | number): string {
 }
 
 export function History({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { entries, remove, clear, hydrated } = useHistory();
+  const entries = useHistory((s) => s.entries);
+  const remove = useHistory((s) => s.remove);
+  const clear = useHistory((s) => s.clear);
+  const hydrated = useHistory((s) => s.hydrated);
   const setCopied = useClipboard((s) => s.setCopied);
   const ttl = useSettings((s) => s.ttl_seconds);
   const [revealed, setRevealed] = useState<Record<string, string>>({});

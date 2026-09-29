@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { AppSettings, DEFAULT_SETTINGS, PassphraseLang } from "../types";
+import { emitSettingsChanged } from "../utils/crossWindowEvents";
 
 const detectLang = (): PassphraseLang => {
   if (typeof navigator === "undefined") return "en";
@@ -18,16 +19,7 @@ export const useSettings = create<SettingsState>()(
     (set) => ({
       ...DEFAULT_SETTINGS,
       passphrase_lang: detectLang(),
-      set: (patch) => {
-        set(patch);
-        // B7: notify other windows (QuickPop) that settings changed so they
-        // can re-read localStorage (theme, options) instead of staying stale.
-        import("../utils/crossWindowEvents").then(({ emitSettingsChanged }) => {
-          Object.entries(patch).forEach(([key, value]) =>
-            emitSettingsChanged({ key, value }).catch(() => {}),
-          );
-        });
-      },
+      set: (patch) => set(patch),
       reset: () => set({ ...DEFAULT_SETTINGS, passphrase_lang: detectLang() }),
     }),
     {
@@ -49,3 +41,15 @@ export const useSettings = create<SettingsState>()(
     },
   ),
 );
+
+// A5: cross-window notification moved out of the set() mutator into an
+// explicit subscription. set() is now a pure state update; the emitter
+// diffs previous/next settings and notifies other windows per changed key.
+// The emit rejects outside Tauri (tests) - the catch keeps it inert there.
+useSettings.subscribe((state, prev) => {
+  for (const key of Object.keys(state) as (keyof AppSettings)[]) {
+    if (state[key] !== prev[key]) {
+      emitSettingsChanged({ key, value: state[key] }).catch(() => {});
+    }
+  }
+});

@@ -1,0 +1,86 @@
+/* ============================================================
+   Buttons
+   ============================================================ */
+
+button {
+  font: inherit;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--rule-strong);
+  padding: 9px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease,
+    box-shadow 120ms ease;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+button:hover {
+  background: var(--paper-3);
+  color: var(--acid);
+  border-color: var(--acid);
+  box-shadow: var(--glow);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 2px;
+}
+
+button:active { transform: translate(1px, 1px); }
+
+.chip { border-left: none; }
+.chip:first-of-type { border-left: 1px solid var(--rule-strong); }
+
+.chip-primary {
+  background: var(--acid);
+  color: var(--paper);
+  border-color: var(--acid);
+  font-weight: 700;
+  border-left: 1px solid var(--acid) !important;
+  position: relative;
+}
+
+.chip-primary:hover {
+  background: var(--acid-deep);
+  color: var(--paper);
+  border-color: var(--acid-deep);
+  box-shadow: 0 0 22px rgba(0, 230, 138, 0.35);
+}
+
+.btn-primary {
+  background: var(--acid);
+  color: var(--paper);
+  border-color: var(--acid);
+  font-weight: 700;
+}
+
+.btn-primary:hover {
+  background: var(--acid-deep);
+  color: var(--paper);
+  border-color: var(--acid-deep);
+  box-shadow: 0 0 22px rgba(0, 230, 138, 0.35);
+}
+
+button.danger { color: var(--danger); border-color: var(--danger); }
+
+button.danger:hover {
+  background: var(--danger);
+  color: var(--paper);
+  border-color: var(--danger);
+  box-shadow: 0 0 18px rgba(255, 71, 87, 0.3);
+}
+
+button.link {
+  border: none;
+  color: var(--ink-dim);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 4px 6px;
+}
+
+button.link:hover { color: var(--acid); background: transparent; box-shadow: none; }

@@ -6,7 +6,9 @@ const RADIUS = 36;
 const CIRC = 2 * Math.PI * RADIUS;
 
 export function ClipboardBadge() {
-  const { status, expiresAt, panel } = useClipboard();
+  const status = useClipboard((s) => s.status);
+  const expiresAt = useClipboard((s) => s.expiresAt);
+  const panel = useClipboard((s) => s.panel);
   const ttl = useSettings((s) => s.ttl_seconds);
   const [remaining, setRemaining] = useState<number>(0);
 

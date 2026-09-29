@@ -19,8 +19,8 @@ const SALT_LEN: usize = 16;
 const NONCE_LEN: usize = 12;
 const TAG_LEN: usize = 16;
 const KEY_LEN: usize = 32;
-const KEYRING_SERVICE: &str = "com.unbreakable.app";
-const KEYRING_USER: &str = "vault-kek";
+pub const KEYRING_SERVICE: &str = "com.unbreakable.app";
+pub const KEYRING_USER: &str = "vault-kek";
 const HKDF_INFO: &[u8] = b"unbreakable-vault-v1";
 
 #[derive(Debug, thiserror::Error)]

@@ -1,4 +1,4 @@
-use crate::crypto::storage::{HistoryEntry, VaultStore};
+use crate::crypto::storage::{HistoryEntry, VaultStore, KEYRING_SERVICE, KEYRING_USER};
 use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -35,7 +35,7 @@ pub fn vault_status(app: AppHandle) -> Result<VaultStatus, String> {
     let path = vault_path(&app)?;
     let vault_exists = path.exists();
 
-    let keyring_ok = keyring::Entry::new("com.unbreakable.app", "vault-kek")
+    let keyring_ok = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER)
         .map(|e| {
             let _ = e.get_password();
             true
@@ -96,20 +96,20 @@ pub fn vault_unlock(
     store
         .load()
         .map_err(|_| "mot de passe incorrect".to_string())?;
-    *state.store.lock().unwrap() = Some(store);
+    *state.store.lock().unwrap_or_else(|p| p.into_inner()) = Some(store);
     Ok(())
 }
 
 #[tauri::command]
 pub fn vault_load(state: State<'_, VaultState>) -> Result<Vec<HistoryEntry>, String> {
-    let guard = state.store.lock().unwrap();
+    let guard = state.store.lock().unwrap_or_else(|p| p.into_inner());
     let store = guard.as_ref().ok_or("vault not unlocked")?;
     store.load().map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn vault_save(state: State<'_, VaultState>, entries: Vec<HistoryEntry>) -> Result<(), String> {
-    let mut guard = state.store.lock().unwrap();
+    let mut guard = state.store.lock().unwrap_or_else(|p| p.into_inner());
     let store = guard.as_mut().ok_or("vault not unlocked")?;
     store.save(&entries).map_err(|e| e.to_string())
 }
@@ -120,7 +120,7 @@ pub fn vault_set_master_password(
     new_pw: Option<String>,
 ) -> Result<(), String> {
     validate_master_pw(&new_pw)?;
-    let mut guard = state.store.lock().unwrap();
+    let mut guard = state.store.lock().unwrap_or_else(|p| p.into_inner());
     let store = guard.as_mut().ok_or("vault not unlocked")?;
     store
         .rotate_master_password(new_pw.as_deref())
@@ -154,10 +154,10 @@ pub fn vault_clear(
         std::fs::remove_file(&path).map_err(|e| e.to_string())?;
     }
     // Wipe the keyring entry so a fresh KEK is created on next open.
-    if let Ok(entry) = keyring::Entry::new("com.unbreakable.app", "vault-kek") {
+    if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER) {
         let _ = entry.delete_credential();
     }
     // Reset the in-memory store so subsequent vault_status / vault_unlock reflect the wipe.
-    *state.store.lock().unwrap() = None;
+    *state.store.lock().unwrap_or_else(|p| p.into_inner()) = None;
     Ok(())
 }

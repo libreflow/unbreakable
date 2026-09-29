@@ -1,0 +1,55 @@
+/* ============================================================
+   Header — masthead
+   ============================================================ */
+
+.app-header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 28px;
+  align-items: end;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  line-height: 0.85;
+}
+
+.brand-mark {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--acid);
+  border: 1px solid var(--acid);
+  padding: 4px 8px 3px;
+  text-transform: uppercase;
+  text-shadow: var(--glow);
+}
+
+.brand-text {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.app-tagline {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  align-self: center;
+  margin-left: 24px;
+  padding-left: 24px;
+  border-left: 1px solid var(--rule);
+}
+
+.app-actions { display: flex; gap: 0; align-items: center; }

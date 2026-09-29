@@ -2,15 +2,18 @@ import { useEffect, useRef } from "react";
 import { useGenerator } from "../stores/generatorStore";
 import { useClipboard } from "../stores/clipboardStore";
 import { useSettings } from "../stores/settingsStore";
-import { useHistory } from "../stores/historyStore";
-import { clearIfOurs, copyToClipboard, generatePairFromOpts } from "../utils/tauriCommands";
-import { analyzeStrength } from "../utils/strength";
+import { clearIfOurs, generatePairFromOpts } from "../utils/tauriCommands";
+import { useCopySecret } from "./useCopySecret";
 
 export function useAutoGenerate() {
-  const { pwdOpts, phraseOpts, setPassword, setPassphrase } = useGenerator();
-  const { setCopied, status } = useClipboard();
-  const { default_copy, ttl_seconds, auto_copy_on_open } = useSettings();
-  const addHistory = useHistory((s) => s.add);
+  const copySecret = useCopySecret();
+  const pwdOpts = useGenerator((s) => s.pwdOpts);
+  const phraseOpts = useGenerator((s) => s.phraseOpts);
+  const setPassword = useGenerator((s) => s.setPassword);
+  const setPassphrase = useGenerator((s) => s.setPassphrase);
+  const status = useClipboard((s) => s.status);
+  const default_copy = useSettings((s) => s.default_copy);
+  const auto_copy_on_open = useSettings((s) => s.auto_copy_on_open);
   const ranRef = useRef(false);
   const timerRef = useRef<number | null>(null);
 
@@ -25,10 +28,7 @@ export function useAutoGenerate() {
         setPassphrase(phrase);
         if (auto_copy_on_open) {
           const secret = default_copy === "password" ? pwd : phrase;
-          await copyToClipboard(secret);
-          setCopied(default_copy, ttl_seconds);
-          const score = analyzeStrength(secret).score;
-          addHistory(default_copy, secret, score);
+          await copySecret(default_copy, secret);
         }
       } catch (e) {
         console.error("auto-generate failed", e);

@@ -1,93 +1,38 @@
-import { useEffect, useMemo, useState } from "react";
 import { useGenerator } from "../../stores/generatorStore";
-import { useClipboard } from "../../stores/clipboardStore";
-import { useSettings } from "../../stores/settingsStore";
-import { useHistory } from "../../stores/historyStore";
-import { copyToClipboard, generateMemorable, generatePassword } from "../../utils/tauriCommands";
-import { analyzeStrength } from "../../utils/strength";
-import { StrengthMeter } from "../StrengthMeter/StrengthMeter";
-import { setWindowProtected } from "../../utils/windowProtection";
+import { SecretPanel, usePanelRegenerate } from "../Panels/SecretPanel";
 
 export function PasswordPanel() {
-  const { password, setPassword, pwdOpts } = useGenerator();
-  const setCopied = useClipboard((s) => s.setCopied);
-  const ttl = useSettings((s) => s.ttl_seconds);
-  const addHistory = useHistory((s) => s.add);
-  const [hidden, setHidden] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [memorable, setMemorable] = useState(false);
+  const { regenerate, err, memorable, setMemorable } = usePanelRegenerate("password");
+  const secret = useGenerator((s) => s.password);
+  const meta = memorable ? "mémorable FR · 14-20" : `${secret.length} chars · site-compat`;
 
-  // Anti-screenshot: keep the main window protected while this panel is
-  // mounted. PassphrasePanel renders the passphrase in plaintext beside
-  // us, so unprotecting on `hidden` would leak that secret to screenshots.
-  useEffect(() => {
-    setWindowProtected("main", true).catch(() => {});
-    return () => { setWindowProtected("main", false).catch(() => {}); };
-  }, []);
-
-  const score = useMemo(() => analyzeStrength(password).score, [password]);
-
-  const regenerate = async () => {
-    setErr(null);
-    try {
-      const p = memorable ? await generateMemorable() : await generatePassword(pwdOpts);
-      setPassword(p);
-    } catch (e) {
-      setErr(String(e));
-    }
-  };
-  useEffect(() => {
-    regenerate();
-  }, [memorable]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const copy = async () => {
-    if (!password) return;
-    await copyToClipboard(password);
-    setCopied("password", ttl);
-    addHistory("password", password, score);
+  // A8: toggling the mode regenerates via the event handler itself,
+  // not through an effect with disabled lint rules.
+  const toggleMemorable = () => {
+    const next = !memorable;
+    setMemorable(next);
+    // regenerate is recreated by the memo when memorable flips; use the
+    // freshest one via a microtask so state has propagated.
+    queueMicrotask(() => {
+      useGenerator.getState();
+      regenerate().catch(() => {});
+    });
   };
 
   return (
-    <section className="panel" data-score={score} aria-labelledby="pwd-title">
-      <header className="panel-header">
-        <div className="panel-title-group">
-          <span className="panel-number">01.</span>
-          <h2 id="pwd-title">Mot de passe</h2>
+    <SecretPanel
+      kind="password"
+      meta={meta}
+      regenerate={regenerate}
+      err={err}
+      footerControls={
+        <div className="panel-mode">
+          <label className="mode-toggle">
+            <input type="checkbox" checked={memorable} onChange={toggleMemorable} />
+            <span>Mot de passe mémorable (mots français)</span>
+          </label>
         </div>
-        <span className="panel-meta">{memorable ? "mémorable FR · 14-20" : `${password.length} chars · site-compat`}</span>
-      </header>
-      <div
-        className="secret-display"
-        aria-label="Mot de passe généré"
-        data-hidden={hidden ? "true" : "false"}
-      >
-        {password ? (hidden ? "•".repeat(password.length) : password) : <span className="placeholder">en attente…</span>}
-      </div>
-      <StrengthMeter secret={password} />
-      {err && <div className="error-inline" role="alert">{err}</div>}
-      <div className="panel-mode">
-        <label className="mode-toggle">
-          <input
-            type="checkbox"
-            checked={memorable}
-            onChange={(e) => setMemorable(e.target.checked)}
-          />
-          <span>Mot de passe mémorable (mots français)</span>
-        </label>
-      </div>
-      <div className="panel-actions">
-        <button onClick={copy} className="btn-primary" aria-label="Copier le mot de passe">
-          Copier
-        </button>
-        <button onClick={regenerate} aria-label="Régénérer le mot de passe">↻ Régénérer</button>
-        <button
-          onClick={() => setHidden((h) => !h)}
-          aria-pressed={hidden}
-          aria-label={hidden ? "Afficher le mot de passe" : "Masquer le mot de passe"}
-        >
-          {hidden ? "Afficher" : "Masquer"}
-        </button>
-      </div>
-    </section>
+      }
+    />
   );
 }
