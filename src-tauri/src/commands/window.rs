@@ -7,6 +7,11 @@ pub fn cmd_set_window_protected(
     label: String,
     protected: bool,
 ) -> Result<bool, String> {
+    // Debug-only escape hatch for E2E screenshot tests (docs/testing/e2e-security.md).
+    // #[cfg(debug_assertions)] keeps this compiled out of release builds entirely —
+    // an env var must never be able to disable the app's flagship security feature
+    // in a build end users actually run.
+    #[cfg(debug_assertions)]
     if std::env::var("UNBREAKABLE_DISABLE_PROTECTION").is_ok() {
         return Ok(false);
     }
