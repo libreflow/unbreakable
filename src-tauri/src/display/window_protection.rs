@@ -8,6 +8,9 @@ pub enum ProtectionError {
                         // the construction site, but the variant is real on Linux builds.
     Unsupported,
     #[error("OS API error: {0}")]
+    #[allow(dead_code)] // only constructed on the windows/macos cfg branches below;
+                        // this file is compiled per-target so CI on Linux never sees
+                        // the construction sites, but the variant is real on Win/macOS.
     OsError(String),
 }
 

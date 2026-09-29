@@ -35,7 +35,9 @@ Prérequis : Node ≥ 22.12, Rust ≥ 1.87, WebView2 (Win) / WebKitGTK 4.1 (Linu
 | `npm run preview` | Prévisualisation du build Vite |
 | `npm run tauri dev` | App desktop complète (hot-reload) |
 | `npm run tauri build` | Bundles signés multi-OS (`.msi`, `.dmg`, `.deb`) |
+| `npm test` | Tests frontend Vitest (`tests/`) |
 | `cargo test --lib` | Tests unitaires Rust (depuis `src-tauri/`) |
+| `cargo test` | Tests Rust complets : unitaires + intégration |
 <!-- END AUTO-GENERATED -->
 
 ## Raccourcis
@@ -126,9 +128,10 @@ Prérequis : Node ≥ 22.12, Rust ≥ 1.87, WebView2 (Win) / WebKitGTK 4.1 (Linu
 
 ## TODO
 
-- Wordlist EFF Large (7776 mots) via `include_bytes!`
-- Wordlist FR Diceware
-- Tests proptest
 - Plugin updater + endpoint signé
-- E2E Playwright cross-OS
 - Notarisation Apple + signtool Windows
+- E2E Playwright cross-OS (dépendance déjà déclarée)
+
+## Licence
+
+MIT — voir [LICENSE](LICENSE).
