@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   isSecretCopiedPayload,
   isSettingsChangedPayload,
-  isTrayIconStatePayload,
 } from "../src/utils/crossWindowEvents";
 
 describe("crossWindowEvents type guards", () => {
@@ -18,9 +17,4 @@ describe("crossWindowEvents type guards", () => {
     expect(isSettingsChangedPayload({ key: 123, value: 1 })).toBe(false);
   });
 
-  it("validates tray-icon-state payload", () => {
-    expect(isTrayIconStatePayload({ state: "idle" })).toBe(true);
-    expect(isTrayIconStatePayload({ state: "active" })).toBe(true);
-    expect(isTrayIconStatePayload({ state: "blink" })).toBe(false);
-  });
 });

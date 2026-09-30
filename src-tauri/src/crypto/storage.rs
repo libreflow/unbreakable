@@ -141,10 +141,6 @@ impl VaultStore {
         })
     }
 
-    pub fn is_master_password_enabled(&self) -> bool {
-        self.master_pw_enabled
-    }
-
     pub fn peek_header(path: &PathBuf) -> Result<Option<VaultHeader>, VaultError> {
         if !path.exists() {
             return Ok(None);

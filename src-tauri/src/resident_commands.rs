@@ -39,11 +39,6 @@ pub fn show_quick_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn hide_quick_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
-    quick_window::hide(&app)
-}
-
-#[tauri::command]
 pub fn show_main_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
     if let Some(w) = app.get_webview_window("main") {
         w.show().map_err(|e| e.to_string())?;

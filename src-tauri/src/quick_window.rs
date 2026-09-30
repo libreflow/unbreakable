@@ -24,13 +24,6 @@ pub fn show_or_create<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
     Ok(())
 }
 
-pub fn hide<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
-    if let Some(w) = app.get_webview_window(QUICK_LABEL) {
-        w.close().map_err(|e| e.to_string())?;
-    }
-    Ok(())
-}
-
 fn center_on_active_monitor<R: Runtime>(window: &tauri::WebviewWindow<R>) -> Result<(), String> {
     let monitor = window
         .current_monitor()
