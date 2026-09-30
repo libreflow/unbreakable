@@ -154,27 +154,23 @@ function App() {
     <main className="app">
       <header className="app-header">
         <div className="brand" aria-label="Unbreakable">
-          <span className="brand-mark">EST Â· 2026</span>
           <span className="brand-text">Unbreakable</span>
-        </div>
-        <div className="app-tagline">
-          Cipher press Â· pour un secret prÃªt Ã  coller, sans dÃ©tour
         </div>
         <nav className="app-actions" aria-label="Actions principales">
           <button
             className="chip chip-primary"
             onClick={regenerate}
-            aria-label="RÃ©gÃ©nÃ©rer (Espace)"
-            title="RÃ©gÃ©nÃ©rer â Espace / Ctrl+R"
+            aria-label="Régénérer (Espace)"
+            title="Régénérer — Espace / Ctrl+R"
           >
-            â³ RÃ©gÃ©n
+            ↳ Régén
           </button>
           <button
             className={historyOpen ? "chip chip-active" : "chip"}
             onClick={() => setHistoryOpen(true)}
             aria-expanded={historyOpen}
             aria-label="Historique (Ctrl+H)"
-            title="Historique â Ctrl+H"
+            title="Historique — Ctrl+H"
           >
             Hist
           </button>
@@ -182,17 +178,17 @@ function App() {
             className={settingsOpen ? "chip chip-active" : "chip"}
             onClick={() => setSettingsOpen(true)}
             aria-expanded={settingsOpen}
-            aria-label="ParamÃ¨tres (Ctrl+,)"
-            title="ParamÃ¨tres â Ctrl+,"
+            aria-label="Paramètres (Ctrl+,)"
+            title="Paramètres — Ctrl+,"
           >
-            RÃ©glages
+            Réglages
           </button>
           <button
             className={helpOpen ? "chip chip-active" : "chip"}
             onClick={() => setHelpOpen(true)}
             aria-expanded={helpOpen}
             aria-label="Aide (?)"
-            title="Aide â ?"
+            title="Aide — ?"
           >
             ?
           </button>
@@ -203,13 +199,13 @@ function App() {
         <ClipboardBadge />
       </div>
 
-      <section className="panels" aria-label="Secrets gÃ©nÃ©rÃ©s">
+      <section className="panels" aria-label="Secrets générés">
         <PasswordPanel />
         <PassphrasePanel />
       </section>
       {genError && (
         <div className="error-inline" role="alert" aria-live="polite">
-          GÃ©nÃ©ration impossible : {genError}
+          Génération impossible : {genError}
         </div>
       )}
 
@@ -230,9 +226,9 @@ function App() {
             <dl className="kbd-list">
               <div>
                 <dt>
-                  <kbd>Ctrl</kbd>+<kbd>R</kbd> Â· <kbd>Espace</kbd>
+                  <kbd>Ctrl</kbd>+<kbd>R</kbd> · <kbd>Espace</kbd>
                 </dt>
-                <dd>RÃ©gÃ©nÃ©rer</dd>
+                <dd>Régénérer</dd>
               </div>
               <div>
                 <dt>
@@ -250,7 +246,7 @@ function App() {
                 <dt>
                   <kbd>Ctrl</kbd>+<kbd>M</kbd>
                 </dt>
-                <dd>Mode mÃ©morable FR</dd>
+                <dd>Mode mémorable FR</dd>
               </div>
               <div>
                 <dt>
@@ -262,7 +258,7 @@ function App() {
                 <dt>
                   <kbd>Ctrl</kbd>+<kbd>,</kbd>
                 </dt>
-                <dd>ParamÃ¨tres</dd>
+                <dd>Paramètres</dd>
               </div>
               <div>
                 <dt>
@@ -272,7 +268,7 @@ function App() {
               </div>
               <div>
                 <dt>
-                  <kbd>Ãchap</kbd>
+                  <kbd>Échap</kbd>
                 </dt>
                 <dd>Fermer</dd>
               </div>

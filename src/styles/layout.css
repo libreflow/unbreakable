@@ -11,17 +11,3 @@
   margin: 0 auto;
   position: relative;
 }
-
-/* Top corner watermark */
-.app::before {
-  content: "v0.1.0 · OFFLINE · ZERO-NETWORK";
-  position: absolute;
-  top: 14px;
-  right: clamp(16px, 3vw, 32px);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  pointer-events: none;
-}

@@ -17,8 +17,6 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
 
   if (!open) return null;
 
-  if (!open) return null;
-
   return (
     <div className="flyout-backdrop" onClick={onClose} aria-hidden="true">
       <aside
@@ -169,6 +167,7 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
                 type="text"
                 maxLength={1}
                 value={phraseOpts.separator}
+                placeholder="-"
                 onChange={(e) => setPhraseOpts({ separator: e.target.value })}
                 aria-describedby="sep-hint"
               />
