@@ -2,13 +2,6 @@
    Flyouts (Settings / History)
    ============================================================ */
 
-.flyout-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(2, 6, 8, 0.55);
-  z-index: 59;
-  animation: fadeIn 160ms ease;
-}
 .flyout {
   position: fixed;
   top: 0;
@@ -185,4 +178,19 @@
   border: 1px solid rgba(255, 179, 64, 0.3);
   border-radius: var(--radius);
   padding: 10px 12px;
+}
+
+/* Push mode: the flyout slides over the right edge and the main layout
+   shrinks instead of being covered by an overlay backdrop. */
+.app-pushed {
+  padding-right: calc(var(--flyout-w, min(460px, 100%)) + 24px) !important;
+  transition: padding-right 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.app {
+  transition: padding-right 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (max-width: 800px) {
+  .app-pushed {
+    padding-right: 16px !important;
+  }
 }

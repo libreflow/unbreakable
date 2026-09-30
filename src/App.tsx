@@ -313,7 +313,10 @@ function App() {
   }
 
   return (
-    <main className="app">
+    <main
+      className={`app${settingsOpen || historyOpen ? " app-pushed" : ""}`}
+      style={{ ["--flyout-w" as string]: historyOpen ? "min(580px, 100%)" : "min(460px, 100%)" }}
+    >
       <header className="app-header">
         <div className="brand" aria-label="Unbreakable">
           <span className="brand-mark">EST · 2026</span>

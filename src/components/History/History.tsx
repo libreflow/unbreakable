@@ -62,117 +62,114 @@ export function History({ open, onClose }: { open: boolean; onClose: () => void 
   };
 
   return (
-    <div className="flyout-backdrop" onClick={onClose} aria-hidden="true">
-      <aside
-        ref={dialogRef}
-        className="flyout flyout-history"
-        role="dialog"
-        aria-label="Historique"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="flyout-header">
-          <h2>Historique ({entries.length})</h2>
-          <div>
-            {entries.length > 0 && !confirmClear && (
-              <button onClick={() => setConfirmClear(true)} aria-label="Vider l'historique">
-                Vider
-              </button>
-            )}
-            {confirmClear && (
-              <span className="confirm-clear" role="group" aria-label="Confirmer la suppression">
-                <span>Tout supprimer ?</span>
-                <button
-                  autoFocus
-                  onClick={() => {
-                    clear();
-                    setConfirmClear(false);
-                  }}
-                >
-                  Oui
-                </button>
-                <button onClick={() => setConfirmClear(false)}>Non</button>
-              </span>
-            )}
-            <button onClick={onClose} aria-label="Fermer">
-              ✕
+    <aside
+      ref={dialogRef}
+      className="flyout flyout-history"
+      role="dialog"
+      aria-label="Historique"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <header className="flyout-header">
+        <h2>Historique ({entries.length})</h2>
+        <div>
+          {entries.length > 0 && !confirmClear && (
+            <button onClick={() => setConfirmClear(true)} aria-label="Vider l'historique">
+              Vider
             </button>
-          </div>
-        </header>
-        <div className="flyout-body">
-          <input
-            type="search"
-            className="history-search"
-            placeholder="Rechercher (label, type, secret)…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Rechercher dans l'historique"
-          />
-          {!hydrated ? (
-            <p className="placeholder">Chargement…</p>
-          ) : filtered.length === 0 ? (
-            <p className="placeholder">
-              {entries.length === 0
-                ? "Aucun secret généré pour le moment."
-                : "Aucun résultat pour cette recherche."}
-            </p>
-          ) : (
-            <ul className="history-list">
-              {filtered.map((e) => (
-                <li key={e.id} className="history-row">
-                  <div className="history-meta">
-                    <span className={`tag tag-${e.kind}`}>
-                      {e.kind === "password" ? "MDP" : "Passphrase"}
-                    </span>
-                    <span>{formatDate(e.created_at)}</span>
-                    <span>score {e.score}/4</span>
-                  </div>
-                  {editing === e.id ? (
-                    <input
-                      className="history-label-input"
-                      autoFocus
-                      defaultValue={e.label ?? ""}
-                      placeholder="Label (ex. AD jean.dupont)"
-                      aria-label="Modifier le label"
-                      onBlur={(ev) => {
-                        rename(e.id, ev.target.value);
-                        setEditing(null);
-                      }}
-                      onKeyDown={(ev) => {
-                        if (ev.key === "Enter") (ev.target as HTMLInputElement).blur();
-                        if (ev.key === "Escape") setEditing(null);
-                      }}
-                    />
-                  ) : (
-                    <button
-                      className="history-label"
-                      onClick={() => setEditing(e.id)}
-                      title="Renommer cette entrée"
-                      aria-label="Renommer cette entrée"
-                    >
-                      {e.label ?? "＋ label"}
-                    </button>
-                  )}
-                  <code className="history-secret">
-                    {revealed[e.id] ?? "•".repeat(Math.min(e.value.length, 48))}
-                  </code>
-                  <div className="history-actions">
-                    <button onClick={() => recopy(e)} aria-label="Recopier ce secret">
-                      Copier
-                    </button>
-                    <button onClick={() => reveal(e)} aria-label="Afficher / masquer">
-                      {revealed[e.id] ? "Masquer" : "Afficher"}
-                    </button>
-                    <button onClick={() => remove(e.id)} aria-label="Supprimer" title="Supprimer">
-                      ×
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
           )}
+          {confirmClear && (
+            <span className="confirm-clear" role="group" aria-label="Confirmer la suppression">
+              <span>Tout supprimer ?</span>
+              <button
+                autoFocus
+                onClick={() => {
+                  clear();
+                  setConfirmClear(false);
+                }}
+              >
+                Oui
+              </button>
+              <button onClick={() => setConfirmClear(false)}>Non</button>
+            </span>
+          )}
+          <button onClick={onClose} aria-label="Fermer">
+            ✕
+          </button>
         </div>
-      </aside>
-    </div>
+      </header>
+      <div className="flyout-body">
+        <input
+          type="search"
+          className="history-search"
+          placeholder="Rechercher (label, type, secret)…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Rechercher dans l'historique"
+        />
+        {!hydrated ? (
+          <p className="placeholder">Chargement…</p>
+        ) : filtered.length === 0 ? (
+          <p className="placeholder">
+            {entries.length === 0
+              ? "Aucun secret généré pour le moment."
+              : "Aucun résultat pour cette recherche."}
+          </p>
+        ) : (
+          <ul className="history-list">
+            {filtered.map((e) => (
+              <li key={e.id} className="history-row">
+                <div className="history-meta">
+                  <span className={`tag tag-${e.kind}`}>
+                    {e.kind === "password" ? "MDP" : "Passphrase"}
+                  </span>
+                  <span>{formatDate(e.created_at)}</span>
+                  <span>score {e.score}/4</span>
+                </div>
+                {editing === e.id ? (
+                  <input
+                    className="history-label-input"
+                    autoFocus
+                    defaultValue={e.label ?? ""}
+                    placeholder="Label (ex. AD jean.dupont)"
+                    aria-label="Modifier le label"
+                    onBlur={(ev) => {
+                      rename(e.id, ev.target.value);
+                      setEditing(null);
+                    }}
+                    onKeyDown={(ev) => {
+                      if (ev.key === "Enter") (ev.target as HTMLInputElement).blur();
+                      if (ev.key === "Escape") setEditing(null);
+                    }}
+                  />
+                ) : (
+                  <button
+                    className="history-label"
+                    onClick={() => setEditing(e.id)}
+                    title="Renommer cette entrée"
+                    aria-label="Renommer cette entrée"
+                  >
+                    {e.label ?? "＋ label"}
+                  </button>
+                )}
+                <code className="history-secret">
+                  {revealed[e.id] ?? "•".repeat(Math.min(e.value.length, 48))}
+                </code>
+                <div className="history-actions">
+                  <button onClick={() => recopy(e)} aria-label="Recopier ce secret">
+                    Copier
+                  </button>
+                  <button onClick={() => reveal(e)} aria-label="Afficher / masquer">
+                    {revealed[e.id] ? "Masquer" : "Afficher"}
+                  </button>
+                  <button onClick={() => remove(e.id)} aria-label="Supprimer" title="Supprimer">
+                    ×
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </aside>
   );
 }
