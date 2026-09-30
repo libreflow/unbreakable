@@ -32,7 +32,13 @@ pub fn run() {
         .manage(ClipboardState::default())
         .manage(VaultState::default())
         .setup(|app| {
-            commands::clipboard::recover_stale_clipboard(app.handle());
+            // Stale-clipboard recovery reads the OS clipboard and touches the
+            // sentinel file - run it off the main thread so a contended
+            // clipboard (clipboard manager, AV) cannot freeze the app at boot.
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn_blocking(move || {
+                commands::clipboard::recover_stale_clipboard(&handle);
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -67,18 +73,26 @@ pub fn run() {
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { .. } = event {
                 let app = window.app_handle().clone();
-                let state = app.state::<ClipboardState>();
-                let last = state
-                    .last_written
-                    .lock()
-                    .ok()
-                    .and_then(|g| g.as_deref().map(|s| s.to_string()));
+                // Snapshot the last-written secret under a short lock, then
+                // do the clipboard read/clear on a blocking thread: the main
+                // thread must never wait on clipboard contention (otherwise
+                // the window shows "not responding" on close).
+                let last = {
+                    let state = app.state::<ClipboardState>();
+                    state
+                        .last_written
+                        .lock()
+                        .ok()
+                        .and_then(|g| g.as_deref().map(|s| s.to_string()))
+                };
                 if let Some(last) = last {
-                    if let Ok(current) = app.clipboard().read_text() {
-                        if current == last {
-                            let _ = app.clipboard().clear();
+                    tauri::async_runtime::spawn_blocking(move || {
+                        if let Ok(current) = app.clipboard().read_text() {
+                            if current == last {
+                                let _ = app.clipboard().clear();
+                            }
                         }
-                    }
+                    });
                 }
             }
         })

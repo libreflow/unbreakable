@@ -14,13 +14,19 @@ pub fn enable_tray<R: Runtime>(app: AppHandle<R>, enable: bool) -> Result<(), St
 }
 
 #[tauri::command]
-pub fn enable_autostart<R: Runtime>(app: AppHandle<R>, enable: bool) -> Result<(), String> {
-    let mgr = app.autolaunch();
-    if enable {
-        mgr.enable().map_err(|e| e.to_string())
-    } else {
-        mgr.disable().map_err(|e| e.to_string())
-    }
+pub async fn enable_autostart<R: Runtime>(app: AppHandle<R>, enable: bool) -> Result<(), String> {
+    // Autostart toggles write to the Windows registry (Run key) - keep the
+    // write off the main thread.
+    tauri::async_runtime::spawn_blocking(move || {
+        let mgr = app.autolaunch();
+        if enable {
+            mgr.enable().map_err(|e| e.to_string())
+        } else {
+            mgr.disable().map_err(|e| e.to_string())
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -53,7 +59,11 @@ pub fn show_main_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn notify_copied<R: Runtime>(app: AppHandle<R>, kind: String, ttl: u32) -> Result<(), String> {
+pub async fn notify_copied<R: Runtime>(
+    app: AppHandle<R>,
+    kind: String,
+    ttl: u32,
+) -> Result<(), String> {
     let label = if kind == "password" {
         "Mot de passe"
     } else {
@@ -64,38 +74,52 @@ pub fn notify_copied<R: Runtime>(app: AppHandle<R>, kind: String, ttl: u32) -> R
     } else {
         format!("{label} copié")
     };
-    app.notification()
-        .builder()
-        .title("Unbreakable")
-        .body(body)
-        .show()
-        .map_err(|e| e.to_string())
+    // Windows notification (toast) can take hundreds of ms under Action Center
+    // contention - keep it off the main thread.
+    tauri::async_runtime::spawn_blocking(move || {
+        app.notification()
+            .builder()
+            .title("Unbreakable")
+            .body(body)
+            .show()
+            .map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn notify_clipboard_cleared<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
-    app.notification()
-        .builder()
-        .title("Unbreakable")
-        .body("Presse-papiers effacé")
-        .show()
-        .map_err(|e| e.to_string())
+pub async fn notify_clipboard_cleared<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        app.notification()
+            .builder()
+            .title("Unbreakable")
+            .body("Presse-papiers effacé")
+            .show()
+            .map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn notify_generation_failed<R: Runtime>(
+pub async fn notify_generation_failed<R: Runtime>(
     app: AppHandle<R>,
     message: String,
 ) -> Result<(), String> {
-    app.notification()
-        .builder()
-        .title("Unbreakable — erreur")
-        .body(format!("Génération impossible : {message}"))
-        // Distinct sound + title so a failure is audibly distinguishable
-        // from the routine "copied" notifications.
-        .sound("ms-winsoundevent:Notification.Looping.Alarm")
-        .show()
-        .map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || {
+        app.notification()
+            .builder()
+            .title("Unbreakable — erreur")
+            .body(format!("Génération impossible : {message}"))
+            // Distinct sound + title so a failure is audibly distinguishable
+            // from the routine "copied" notifications.
+            .sound("ms-winsoundevent:Notification.Looping.Alarm")
+            .show()
+            .map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
