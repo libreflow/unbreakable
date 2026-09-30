@@ -1,35 +1,114 @@
 /* ============================================================
    Responsive
+   Fenêtre desktop redimensionnable : 600px de largeur min,
+   480px de hauteur min. Les valeurs fluides (clamp) du layout
+   absorbent les tailles intermédiaires ; ces breakpoints
+   traitent les extrêmes.
    ============================================================ */
 
-@media (max-width: 800px) {
+/* --- Largeur étroite : header empilé, panels en colonne --- */
+@media (max-width: 720px) {
   .app {
-    padding: 18px 16px 16px;
-    gap: 14px;
+    padding: 14px 16px 14px;
+    gap: 12px;
   }
+
   .app-header {
     grid-template-columns: 1fr;
-    gap: 12px;
-    padding-bottom: 12px;
+    gap: 8px;
+    padding-bottom: 10px;
   }
+
   .app-tagline {
     display: none;
   }
+
   .app-actions {
     flex-wrap: wrap;
+    gap: 6px;
   }
-  .panels {
-    grid-template-columns: 1fr;
-  }
-  .secret-display {
-    font-size: clamp(18px, 5vw, 24px);
-  }
+
   .app::before {
     display: none;
   }
+
+  .panels {
+    grid-template-columns: 1fr;
+  }
+
+  .secret-display {
+    font-size: clamp(16px, 4.4vw, 24px);
+  }
+
   .hero {
-    padding: 10px 0;
-    min-height: 80px;
+    padding: 4px 0;
+    min-height: 48px;
+  }
+
+  .hero-cell {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}
+
+/* --- Hauteur courte : compresser hero et paddings verticaux --- */
+@media (max-height: 560px) {
+  .app {
+    gap: 10px;
+  }
+
+  .app-header {
+    padding-bottom: 8px;
+  }
+
+  .brand-text {
+    font-size: 22px;
+  }
+
+  .hero {
+    min-height: 0;
+    padding: 2px 0;
+  }
+
+  .hero-cell {
+    min-height: 0;
+  }
+
+  .ttl-clock {
+    width: 56px;
+    height: 56px;
+  }
+
+  .panel {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .secret-display,
+  .passphrase-display {
+    min-height: 48px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .panel-actions {
+    flex-wrap: wrap;
+  }
+
+  .panel-actions button {
+    flex: 1 1 45%;
+  }
+}
+
+/* --- Zone la plus contrainte : 600x480 --- */
+@media (max-width: 720px) and (max-height: 560px) {
+  .panels {
+    gap: 8px;
+  }
+
+  .status-block {
+    gap: 2px;
   }
 }
 
