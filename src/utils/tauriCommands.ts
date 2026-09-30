@@ -14,8 +14,7 @@ export type PassphraseParams = {
 export const generatePassword = (opts?: Partial<PasswordOptions>) =>
   invoke<string>("cmd_generate_password", { opts });
 
-export const generateMemorable = () =>
-  invoke<string>("cmd_generate_memorable");
+export const generateMemorable = () => invoke<string>("cmd_generate_memorable");
 
 export const generatePassphrase = (params: PassphraseParams) =>
   invoke<string>("cmd_generate_passphrase", params);
@@ -49,8 +48,7 @@ export const generatePairFromOpts = (
     includeSymbol: phraseOpts.include_symbol,
   });
 
-export const copyToClipboard = (text: string) =>
-  invoke<void>("cmd_copy_to_clipboard", { text });
+export const copyToClipboard = (text: string) => invoke<void>("cmd_copy_to_clipboard", { text });
 
 export const clearClipboard = () => invoke<void>("cmd_clear_clipboard");
 export const readClipboard = () => invoke<string>("cmd_read_clipboard");

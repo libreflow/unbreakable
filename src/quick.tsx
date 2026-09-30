@@ -16,7 +16,9 @@ try {
   }
   const resolved =
     theme === "auto"
-      ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+      ? window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light"
       : theme;
   document.documentElement.dataset.theme = resolved;
 } catch {
@@ -33,7 +35,9 @@ const applyQuickTheme = () => {
     }
     const resolved =
       theme === "auto"
-        ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+        ? window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light"
         : theme;
     document.documentElement.dataset.theme = resolved;
   } catch {

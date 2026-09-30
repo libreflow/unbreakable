@@ -52,4 +52,8 @@
   border-left: 1px solid var(--rule);
 }
 
-.app-actions { display: flex; gap: 0; align-items: center; }
+.app-actions {
+  display: flex;
+  gap: 0;
+  align-items: center;
+}

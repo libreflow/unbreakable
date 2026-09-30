@@ -17,7 +17,12 @@ describe("vault IPC wrapper", () => {
   beforeEach(() => vi.mocked(invoke).mockReset());
 
   it("status() invokes vault_status", async () => {
-    vi.mocked(invoke).mockResolvedValue({ master_pw_enabled: false, keyring_ok: true, entry_count: 0, vault_exists: false });
+    vi.mocked(invoke).mockResolvedValue({
+      master_pw_enabled: false,
+      keyring_ok: true,
+      entry_count: 0,
+      vault_exists: false,
+    });
     const s = await vault.status();
     expect(invoke).toHaveBeenCalledWith("vault_status");
     expect(s.keyring_ok).toBe(true);

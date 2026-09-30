@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts*\" \"*.html\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts*\" \"*.html\""
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.2.7",
@@ -35,6 +37,7 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^6.0.2",
     "jsdom": "^29.1.1",
+    "prettier": "3.9.9",
     "typescript": "^6.0.3",
     "vite": "^8.0.14",
     "vitest": "^4.1.7"

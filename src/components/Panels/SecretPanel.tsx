@@ -63,17 +63,25 @@ export function SecretPanel({
           hidden ? (
             "•".repeat(secret.length)
           ) : (
-            children ?? secret
+            (children ?? secret)
           )
         ) : (
           <span className="placeholder">en attente…</span>
         )}
       </div>
       <StrengthMeter secret={secret} />
-      {err && <div className="error-inline" role="alert">{err}</div>}
+      {err && (
+        <div className="error-inline" role="alert">
+          {err}
+        </div>
+      )}
       {footerControls}
       <div className="panel-actions">
-        <button onClick={copy} className="btn-primary" aria-label={`Copier le ${title.toLowerCase()}`}>
+        <button
+          onClick={copy}
+          className="btn-primary"
+          aria-label={`Copier le ${title.toLowerCase()}`}
+        >
           Copier
         </button>
         <button

@@ -12,8 +12,8 @@ export interface PasswordOptions {
 export type PassphraseLang = "fr" | "en" | "de" | "es" | "it";
 
 export interface PassphraseOptions {
-  words: number;          // 5-12
-  separator: string;      // single char
+  words: number; // 5-12
+  separator: string; // single char
   include_digit: boolean;
   include_symbol: boolean;
 }

@@ -16,11 +16,21 @@ export function ResidentModeSection() {
 
   const onTray = async (enabled: boolean) => {
     s.set({ tray_enabled: enabled });
-    try { await enableTray(enabled); } catch (e) { console.error(e); s.set({ tray_enabled: !enabled }); }
+    try {
+      await enableTray(enabled);
+    } catch (e) {
+      console.error(e);
+      s.set({ tray_enabled: !enabled });
+    }
   };
   const onAutostart = async (enabled: boolean) => {
     s.set({ autostart_enabled: enabled });
-    try { await enableAutostart(enabled); } catch (e) { console.error(e); s.set({ autostart_enabled: !enabled }); }
+    try {
+      await enableAutostart(enabled);
+    } catch (e) {
+      console.error(e);
+      s.set({ autostart_enabled: !enabled });
+    }
   };
   const onShortcut = async (enabled: boolean) => {
     s.set({ shortcut_enabled: enabled });
@@ -32,7 +42,11 @@ export function ResidentModeSection() {
         await unregisterShortcut();
       }
       setComboError(null);
-    } catch (e) { console.error(e); s.set({ shortcut_enabled: !enabled }); setComboError(String(e)); }
+    } catch (e) {
+      console.error(e);
+      s.set({ shortcut_enabled: !enabled });
+      setComboError(String(e));
+    }
   };
   // P3: the combo field keeps a local draft so each keystroke only updates
   // the input — no persist write, no cross-window IPC emit. The settings store
@@ -61,30 +75,53 @@ export function ResidentModeSection() {
     <section>
       <h3>Mode résident</h3>
       <label className="check">
-        <input type="checkbox" checked={s.tray_enabled} onChange={(e) => onTray(e.target.checked)} />
+        <input
+          type="checkbox"
+          checked={s.tray_enabled}
+          onChange={(e) => onTray(e.target.checked)}
+        />
         Garder dans la barre système (tray)
       </label>
       <label className="check">
-        <input type="checkbox" checked={s.autostart_enabled} onChange={(e) => onAutostart(e.target.checked)} />
+        <input
+          type="checkbox"
+          checked={s.autostart_enabled}
+          onChange={(e) => onAutostart(e.target.checked)}
+        />
         Lancer au démarrage de la session
       </label>
       <label className="check">
-        <input type="checkbox" checked={s.shortcut_enabled} onChange={(e) => onShortcut(e.target.checked)} />
+        <input
+          type="checkbox"
+          checked={s.shortcut_enabled}
+          onChange={(e) => onShortcut(e.target.checked)}
+        />
         Raccourci global actif
       </label>
-      <label>Combinaison
+      <label>
+        Combinaison
         <input
           type="text"
           value={comboDraft}
           onChange={(e) => onCombo(e.target.value)}
           onBlur={onComboCommit}
-          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+          }}
           placeholder="CommandOrControl+Alt+P"
         />
       </label>
-      {comboError && <span className="error-inline" role="alert">Raccourci refusé : {comboError}</span>}
+      {comboError && (
+        <span className="error-inline" role="alert">
+          Raccourci refusé : {comboError}
+        </span>
+      )}
       <label className="check">
-        <input type="checkbox" checked={s.notifications_enabled} onChange={(e) => onNotifs(e.target.checked)} />
+        <input
+          type="checkbox"
+          checked={s.notifications_enabled}
+          onChange={(e) => onNotifs(e.target.checked)}
+        />
         Notifications système (copie, expiration TTL)
       </label>
     </section>

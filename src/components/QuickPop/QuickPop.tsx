@@ -15,7 +15,9 @@ export function QuickPop() {
 
   useEffect(() => {
     setWindowProtected("quick", true).catch(() => {});
-    return () => { setWindowProtected("quick", false).catch(() => {}); };
+    return () => {
+      setWindowProtected("quick", false).catch(() => {});
+    };
   }, []);
 
   const [secret, setSecret] = useState<string>("");
@@ -25,13 +27,16 @@ export function QuickPop() {
   const regenerate = async () => {
     const myReq = ++reqIdRef.current;
     try {
-      const s = defaultKind === "password"
-        ? await generatePassword(pwdOpts)
-        : await generatePassphraseFromOpts(phraseOpts, useSettings.getState().passphrase_lang);
+      const s =
+        defaultKind === "password"
+          ? await generatePassword(pwdOpts)
+          : await generatePassphraseFromOpts(phraseOpts, useSettings.getState().passphrase_lang);
       // Ignore stale responses if a newer regenerate was requested.
       if (myReq !== reqIdRef.current) return;
       setSecret(s);
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   useEffect(() => {
@@ -55,7 +60,11 @@ export function QuickPop() {
   };
 
   const openMain = async () => {
-    try { await showMainWindow(); } catch (e) { console.error(e); }
+    try {
+      await showMainWindow();
+    } catch (e) {
+      console.error(e);
+    }
     getCurrentWebviewWindow().close();
   };
 
@@ -63,14 +72,22 @@ export function QuickPop() {
     <main className="quickpop" data-score={score}>
       <header className="quickpop-header">
         <span className="quickpop-brand">UNBREAKABLE</span>
-        <button className="quickpop-more" onClick={openMain} aria-label="Ouvrir l'app complète">···</button>
+        <button className="quickpop-more" onClick={openMain} aria-label="Ouvrir l'app complète">
+          ···
+        </button>
       </header>
       <div className="quickpop-secret">{secret || "…"}</div>
       <StrengthMeter secret={secret} />
       <div className="quickpop-actions">
-        <button ref={copyBtnRef} className="btn-primary" onClick={copy} aria-label="Copier">COPIER</button>
-        <button onClick={regenerate} aria-label="Régénérer">↻</button>
-        <button onClick={() => getCurrentWebviewWindow().close()} aria-label="Fermer">⏏</button>
+        <button ref={copyBtnRef} className="btn-primary" onClick={copy} aria-label="Copier">
+          COPIER
+        </button>
+        <button onClick={regenerate} aria-label="Régénérer">
+          ↻
+        </button>
+        <button onClick={() => getCurrentWebviewWindow().close()} aria-label="Fermer">
+          ⏏
+        </button>
       </div>
     </main>
   );

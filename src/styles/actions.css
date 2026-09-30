@@ -33,7 +33,10 @@
   background: rgba(255, 255, 255, 0.03);
   position: relative;
   cursor: pointer;
-  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .mode-toggle input::after {
@@ -45,12 +48,14 @@
   height: 12px;
   border-radius: 50%;
   background: var(--ink-faint);
-  transition: transform 150ms ease, background 150ms ease;
+  transition:
+    transform 150ms ease,
+    background 150ms ease;
 }
 
 .mode-toggle input:checked {
   border-color: var(--acid);
-  background: rgba(0, 230, 138, 0.10);
+  background: rgba(0, 230, 138, 0.1);
   box-shadow: 0 0 10px rgba(0, 230, 138, 0.25);
 }
 
@@ -75,7 +80,11 @@
   border-radius: var(--radius);
 }
 
-.panel-actions button:hover { background: var(--rule-strong); color: var(--acid); z-index: 1; }
+.panel-actions button:hover {
+  background: var(--rule-strong);
+  color: var(--acid);
+  z-index: 1;
+}
 
 .panel-actions button:focus-visible {
   outline: 2px solid var(--acid);
@@ -83,8 +92,14 @@
   z-index: 2;
 }
 
-.panel-actions .btn-primary { background: var(--acid); color: var(--paper); }
-.panel-actions .btn-primary:hover { background: var(--acid-deep); color: var(--paper); }
+.panel-actions .btn-primary {
+  background: var(--acid);
+  color: var(--paper);
+}
+.panel-actions .btn-primary:hover {
+  background: var(--acid-deep);
+  color: var(--paper);
+}
 
 .error-inline {
   font-family: var(--font-mono);

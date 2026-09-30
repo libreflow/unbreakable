@@ -22,9 +22,7 @@ function mountHook(useHook: () => void): Root {
 }
 
 function press(key: string, opts?: KeyboardEventInit) {
-  window.dispatchEvent(
-    new KeyboardEvent("keydown", { key, bubbles: true, ...opts }),
-  );
+  window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, ...opts }));
 }
 
 type Handlers = {

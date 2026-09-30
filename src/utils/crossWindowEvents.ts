@@ -30,17 +30,29 @@ export function isTrayIconStatePayload(p: unknown): p is TrayIconStatePayload {
   return o.state === "idle" || o.state === "active";
 }
 
-export async function emitSecretCopied(p: SecretCopiedPayload) { return emit(EVT.secretCopied, p); }
-export async function emitSettingsChanged(p: SettingsChangedPayload) { return emit(EVT.settingsChanged, p); }
-export async function emitClipboardCleared() { return emit(EVT.clipboardCleared, {}); }
-export async function emitTrayIconState(p: TrayIconStatePayload) { return emit(EVT.trayIconState, p); }
+export async function emitSecretCopied(p: SecretCopiedPayload) {
+  return emit(EVT.secretCopied, p);
+}
+export async function emitSettingsChanged(p: SettingsChangedPayload) {
+  return emit(EVT.settingsChanged, p);
+}
+export async function emitClipboardCleared() {
+  return emit(EVT.clipboardCleared, {});
+}
+export async function emitTrayIconState(p: TrayIconStatePayload) {
+  return emit(EVT.trayIconState, p);
+}
 
-export async function listenSecretCopied(cb: (p: SecretCopiedPayload) => void): Promise<UnlistenFn> {
+export async function listenSecretCopied(
+  cb: (p: SecretCopiedPayload) => void,
+): Promise<UnlistenFn> {
   return listen<SecretCopiedPayload>(EVT.secretCopied, (e) => {
     if (isSecretCopiedPayload(e.payload)) cb(e.payload);
   });
 }
-export async function listenSettingsChanged(cb: (p: SettingsChangedPayload) => void): Promise<UnlistenFn> {
+export async function listenSettingsChanged(
+  cb: (p: SettingsChangedPayload) => void,
+): Promise<UnlistenFn> {
   return listen<SettingsChangedPayload>(EVT.settingsChanged, (e) => {
     if (isSettingsChangedPayload(e.payload)) cb(e.payload);
   });

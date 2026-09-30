@@ -52,7 +52,6 @@ export function SecuritySection() {
     await refresh();
   }
 
-
   async function doWipe() {
     try {
       await vault.clear(wipePw || null);
@@ -90,12 +89,41 @@ export function SecuritySection() {
           </button>
         ) : showSetup ? (
           <div className="stack">
-            <input type="password" placeholder="Nouveau mot de passe" value={newPw} onChange={(e) => { setNewPw(e.target.value); setFormError(null); }} />
-            <input type="password" placeholder="Confirmer" value={confirmPw} onChange={(e) => { setConfirmPw(e.target.value); setFormError(null); }} />
-            {formError && <span className="error-inline" role="alert">{formError}</span>}
-            <span className="warning">⚠ Si vous oubliez ce mot de passe, l'historique sera définitivement perdu.</span>
+            <input
+              type="password"
+              placeholder="Nouveau mot de passe"
+              value={newPw}
+              onChange={(e) => {
+                setNewPw(e.target.value);
+                setFormError(null);
+              }}
+            />
+            <input
+              type="password"
+              placeholder="Confirmer"
+              value={confirmPw}
+              onChange={(e) => {
+                setConfirmPw(e.target.value);
+                setFormError(null);
+              }}
+            />
+            {formError && (
+              <span className="error-inline" role="alert">
+                {formError}
+              </span>
+            )}
+            <span className="warning">
+              ⚠ Si vous oubliez ce mot de passe, l'historique sera définitivement perdu.
+            </span>
             <button onClick={enableMasterPw}>Activer</button>
-            <button onClick={() => { setShowSetup(false); setFormError(null); }}>Annuler</button>
+            <button
+              onClick={() => {
+                setShowSetup(false);
+                setFormError(null);
+              }}
+            >
+              Annuler
+            </button>
           </div>
         ) : (
           <button onClick={() => setShowSetup(true)}>Activer</button>
@@ -103,7 +131,10 @@ export function SecuritySection() {
       </div>
       <div className="row">
         <label>Langue passphrase</label>
-        <select value={lang} onChange={(e) => setSettings({ passphrase_lang: e.target.value as PassphraseLang })}>
+        <select
+          value={lang}
+          onChange={(e) => setSettings({ passphrase_lang: e.target.value as PassphraseLang })}
+        >
           <option value="fr">Français</option>
           <option value="en">English</option>
           <option value="de">Deutsch</option>
@@ -128,9 +159,9 @@ export function SecuritySection() {
       </div>
       <div className="row">
         <span className="warning">
-          ⓘ Le presse-papiers OS est accessible à tout processus tournant sous votre
-          session. Le TTL limite l'exposition mais ne protège pas contre un
-          logiciel de surveillance clipboard déjà présent sur le poste.
+          ⓘ Le presse-papiers OS est accessible à tout processus tournant sous votre session. Le TTL
+          limite l'exposition mais ne protège pas contre un logiciel de surveillance clipboard déjà
+          présent sur le poste.
         </span>
       </div>
       <div className="row">
@@ -140,8 +171,8 @@ export function SecuritySection() {
       {!status.master_pw_enabled && (
         <div className="row">
           <span className="warning">
-            ⚠ Sans mot de passe maître, la protection du coffre repose uniquement sur le
-            keystore du système. Tout processus exécuté avec votre compte peut le déchiffrer.
+            ⚠ Sans mot de passe maître, la protection du coffre repose uniquement sur le keystore du
+            système. Tout processus exécuté avec votre compte peut le déchiffrer.
           </span>
         </div>
       )}
@@ -151,22 +182,31 @@ export function SecuritySection() {
       </div>
       <div className="row">
         {wipeStage === "idle" && (
-          <button className="danger" onClick={() => setWipeStage("confirm")}>Effacer le coffre</button>
+          <button className="danger" onClick={() => setWipeStage("confirm")}>
+            Effacer le coffre
+          </button>
         )}
         {wipeStage === "confirm" && (
           <div className="stack">
-            <span className="warning">⚠ EFFACER tout l'historique ? Cette action est irréversible.</span>
+            <span className="warning">
+              ⚠ EFFACER tout l'historique ? Cette action est irréversible.
+            </span>
             <div className="confirm-clear" role="group" aria-label="Confirmer l'effacement">
               <span>Tout effacer ?</span>
               <button
                 className="danger"
-                onClick={() =>
-                  status.master_pw_enabled ? setWipeStage("auth") : doWipe()
-                }
+                onClick={() => (status.master_pw_enabled ? setWipeStage("auth") : doWipe())}
               >
                 Oui
               </button>
-              <button onClick={() => { setWipeStage("idle"); setWipeError(null); }}>Non</button>
+              <button
+                onClick={() => {
+                  setWipeStage("idle");
+                  setWipeError(null);
+                }}
+              >
+                Non
+              </button>
             </div>
           </div>
         )}
@@ -178,14 +218,33 @@ export function SecuritySection() {
                 type="password"
                 value={wipePw}
                 autoFocus
-                onChange={(e) => { setWipePw(e.target.value); setWipeError(null); }}
-                onKeyDown={(e) => { if (e.key === "Enter") doWipe(); }}
+                onChange={(e) => {
+                  setWipePw(e.target.value);
+                  setWipeError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") doWipe();
+                }}
               />
             </label>
-            {wipeError && <span className="error-inline" role="alert">{wipeError}</span>}
+            {wipeError && (
+              <span className="error-inline" role="alert">
+                {wipeError}
+              </span>
+            )}
             <div className="confirm-clear" role="group">
-              <button className="danger" onClick={doWipe}>Effacer définitivement</button>
-              <button onClick={() => { setWipeStage("idle"); setWipePw(""); setWipeError(null); }}>Annuler</button>
+              <button className="danger" onClick={doWipe}>
+                Effacer définitivement
+              </button>
+              <button
+                onClick={() => {
+                  setWipeStage("idle");
+                  setWipePw("");
+                  setWipeError(null);
+                }}
+              >
+                Annuler
+              </button>
             </div>
           </div>
         )}
