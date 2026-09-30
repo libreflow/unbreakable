@@ -42,6 +42,21 @@
     gap: 8px;
     text-align: center;
   }
+
+  .flyout {
+    width: 100vw;
+    border-left: none;
+  }
+
+  .flyout-header,
+  .flyout-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .flyout-header h2 {
+    font-size: 21px;
+  }
 }
 
 /* --- Hauteur courte : compresser hero et paddings verticaux --- */

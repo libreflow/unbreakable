@@ -4,7 +4,7 @@
 
 .app-header {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   gap: clamp(14px, 2vw, 28px);
   align-items: end;
   padding-bottom: clamp(10px, 1.8vh, 18px);
@@ -31,4 +31,5 @@
   display: flex;
   gap: 0;
   align-items: center;
+  justify-self: end;
 }
