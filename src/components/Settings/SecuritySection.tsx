@@ -39,8 +39,8 @@ export function SecuritySection() {
       setFormError("Les mots de passe ne correspondent pas");
       return;
     }
-    if (newPw.length < 8) {
-      setFormError("Minimum 8 caractères");
+    if (newPw.length < 12) {
+      setFormError("Minimum 12 caractères");
       return;
     }
     // Inline confirmation instead of window.confirm

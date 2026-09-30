@@ -63,9 +63,16 @@ pub fn vault_status(app: AppHandle, state: State<'_, VaultState>) -> Result<Vaul
 }
 
 const MAX_MASTER_PW_LEN: usize = 1024;
+const MIN_MASTER_PW_LEN: usize = 12;
 
 fn validate_master_pw(master_pw: &Option<String>) -> Result<(), String> {
     if let Some(pw) = master_pw {
+        let n = pw.chars().count();
+        if n < MIN_MASTER_PW_LEN {
+            return Err(format!(
+                "master password too short (min {MIN_MASTER_PW_LEN} chars)"
+            ));
+        }
         if pw.len() > MAX_MASTER_PW_LEN {
             return Err(format!(
                 "master password too long (max {MAX_MASTER_PW_LEN} bytes)"

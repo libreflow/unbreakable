@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useGenerator } from "../stores/generatorStore";
 import { useClipboard } from "../stores/clipboardStore";
 import { useSettings } from "../stores/settingsStore";
-import { clearIfOurs, generatePairFromOpts } from "../utils/tauriCommands";
+import { clearIfOurs, generateMemorable, generatePairFromOpts } from "../utils/tauriCommands";
 import { useCopySecret } from "./useCopySecret";
 
 export function useAutoGenerate() {
@@ -23,7 +23,16 @@ export function useAutoGenerate() {
     (async () => {
       try {
         const lang = useSettings.getState().passphrase_lang;
-        const [pwd, phrase] = await generatePairFromOpts(pwdOpts, phraseOpts, lang);
+        const memorable = useSettings.getState().memorable_default;
+        // Honor the persisted memorable mode at boot: generatePair only
+        // produces random passwords, so a memorable boot would otherwise
+        // display (and auto-copy) the wrong kind of secret.
+        const [pwd, phrase] = memorable
+          ? await Promise.all([
+              generateMemorable(),
+              generatePairFromOpts(pwdOpts, phraseOpts, lang).then(([, ph]) => ph),
+            ])
+          : await generatePairFromOpts(pwdOpts, phraseOpts, lang);
         setPassword(pwd);
         setPassphrase(phrase);
         if (auto_copy_on_open) {
