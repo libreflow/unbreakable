@@ -6,15 +6,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 16px 0;
-  min-height: 96px;
+  padding: clamp(6px, 1.4vh, 16px) 0;
+  min-height: clamp(56px, 12vh, 96px);
 }
 
 .hero-cell {
-  min-height: 64px;
+  min-height: clamp(48px, 9vh, 64px);
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: clamp(14px, 2vw, 24px);
 }
 
 .status-headline {
@@ -104,7 +104,7 @@
 
 .status-headline {
   font-family: var(--font-display);
-  font-size: clamp(20px, 2.4vw, 30px);
+  font-size: clamp(16px, 2.2vw, 30px);
   font-style: italic;
   line-height: 1.05;
   color: var(--ink);

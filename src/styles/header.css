@@ -5,9 +5,9 @@
 .app-header {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 28px;
+  gap: clamp(14px, 2vw, 28px);
   align-items: end;
-  padding-bottom: 18px;
+  padding-bottom: clamp(10px, 1.8vh, 18px);
   border-bottom: 1px solid var(--rule-strong);
 }
 
@@ -34,7 +34,7 @@
 .brand-text {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: clamp(28px, 4vw, 44px);
+  font-size: clamp(22px, 3.5vw, 44px);
   font-weight: 400;
   color: var(--ink);
   letter-spacing: -0.01em;
@@ -43,6 +43,10 @@
 .app-tagline {
   font-family: var(--font-mono);
   font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--ink-dim);

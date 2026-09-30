@@ -1,13 +1,12 @@
 /* ============================================================
    Layout
    ============================================================ */
-
 .app {
   display: grid;
   grid-template-rows: auto auto 1fr auto;
   height: 100vh;
-  padding: 28px 32px 20px;
-  gap: 20px;
+  padding: clamp(14px, 2.5vw, 28px) clamp(16px, 3vw, 32px) clamp(12px, 2vh, 20px);
+  gap: clamp(12px, 2vh, 20px);
   max-width: 1480px;
   margin: 0 auto;
   position: relative;
@@ -18,7 +17,7 @@
   content: "v0.1.0 · OFFLINE · ZERO-NETWORK";
   position: absolute;
   top: 14px;
-  right: 32px;
+  right: clamp(16px, 3vw, 32px);
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.2em;
