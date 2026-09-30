@@ -295,10 +295,10 @@ function App() {
         </div>
         <div className="app-tagline">Cipher press · pour un secret prêt à coller, sans détour</div>
         <nav className="app-actions" aria-label="Actions principales">
-          <button className="chip chip-primary" onClick={regenerate} aria-label="Régénérer (Espace)">↳ Régen</button>
-          <button className="chip" onClick={() => setHistoryOpen(true)} aria-label="Historique (Ctrl+H)">Hist</button>
-          <button className="chip" onClick={() => setSettingsOpen(true)} aria-label="Paramètres (Ctrl+,)">Réglages</button>
-          <button className="chip" onClick={() => setHelpOpen(true)} aria-label="Aide (?)">?</button>
+          <button className="chip chip-primary" onClick={regenerate} aria-label="Régénérer (Espace)" title="Régénérer — Espace / Ctrl+R">↳ Régén</button>
+          <button className={historyOpen ? "chip chip-active" : "chip"} onClick={() => setHistoryOpen(true)} aria-expanded={historyOpen} aria-label="Historique (Ctrl+H)" title="Historique — Ctrl+H">Hist</button>
+          <button className={settingsOpen ? "chip chip-active" : "chip"} onClick={() => setSettingsOpen(true)} aria-expanded={settingsOpen} aria-label="Paramètres (Ctrl+,)" title="Paramètres — Ctrl+,">Réglages</button>
+          <button className={helpOpen ? "chip chip-active" : "chip"} onClick={() => setHelpOpen(true)} aria-expanded={helpOpen} aria-label="Aide (?)" title="Aide — ?">?</button>
         </nav>
       </header>
 

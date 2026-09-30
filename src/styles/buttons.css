@@ -33,6 +33,11 @@ button:focus-visible {
 
 button:active { transform: translate(1px, 1px); }
 
+.chip[aria-expanded="true"],
+.chip-active {  background: var(--paper-3);
+  color: var(--acid);
+  border-color: var(--acid);
+}
 .chip { border-left: none; }
 .chip:first-of-type { border-left: 1px solid var(--rule-strong); }
 

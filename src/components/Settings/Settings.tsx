@@ -17,8 +17,11 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
 
   if (!open) return null;
 
+  if (!open) return null;
+
   return (
-    <aside ref={dialogRef} className="flyout" role="dialog" aria-label="Paramètres" aria-modal="true">
+    <div className="flyout-backdrop" onClick={onClose} aria-hidden="true">
+    <aside ref={dialogRef} className="flyout" role="dialog" aria-label="Paramètres" aria-modal="true" onClick={(e) => e.stopPropagation()}>
       <header className="flyout-header">
         <h2>Paramètres</h2>
         <button onClick={onClose} aria-label="Fermer">✕</button>
@@ -111,5 +114,6 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
         <ResidentModeSection />
       </div>
     </aside>
+    </div>
   );
 }
