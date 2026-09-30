@@ -19,17 +19,9 @@
     padding-bottom: 10px;
   }
 
-  .app-tagline {
-    display: none;
-  }
-
   .app-actions {
     flex-wrap: wrap;
     gap: 6px;
-  }
-
-  .app::before {
-    display: none;
   }
 
   .panels {
