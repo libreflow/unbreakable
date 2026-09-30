@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { PASSWORD_PRESETS } from "../../config/passwordPresets";
 import { useSettings } from "../../stores/settingsStore";
 import { useGenerator } from "../../stores/generatorStore";
 import { useDialogFocus } from "../../hooks/useDialogFocus";
@@ -87,21 +88,11 @@ export function Settings({ open, onClose }: { open: boolean; onClose: () => void
             <div className="row">
               <label>Presets</label>
               <div className="stack">
-                <button
-                  onClick={() =>
-                    setPwdOpts({
-                      length: 16,
-                      uppercase: true,
-                      lowercase: true,
-                      digits: true,
-                      symbols: true,
-                      exclude_ambiguous: true,
-                      min_per_group: 1,
-                    })
-                  }
-                >
-                  AD (16 chars · complexité GPO)
-                </button>
+                {PASSWORD_PRESETS.map((preset) => (
+                  <button key={preset.label} onClick={() => setPwdOpts(preset.opts)}>
+                    {preset.label}
+                  </button>
+                ))}
               </div>
             </div>
             <label>
