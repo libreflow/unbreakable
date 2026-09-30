@@ -6,17 +6,17 @@ use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
 pub struct VaultState {
-    pub store: Mutex<Option<VaultStore>>,
+    pub store: std::sync::Arc<Mutex<Option<VaultStore>>>,
     // P4: entry count tracked in memory so vault_status never re-decrypts the
     // whole vault just to display a number.
-    pub entry_count: AtomicU32,
+    pub entry_count: std::sync::Arc<AtomicU32>,
 }
 
 impl Default for VaultState {
     fn default() -> Self {
         Self {
-            store: Mutex::new(None),
-            entry_count: AtomicU32::new(0),
+            store: std::sync::Arc::new(Mutex::new(None)),
+            entry_count: std::sync::Arc::new(AtomicU32::new(0)),
         }
     }
 }
@@ -35,23 +35,33 @@ fn vault_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 #[tauri::command]
-pub fn vault_status(app: AppHandle, state: State<'_, VaultState>) -> Result<VaultStatus, String> {
+pub async fn vault_status(
+    app: AppHandle,
+    state: State<'_, VaultState>,
+) -> Result<VaultStatus, String> {
+    // Keyring roundtrip (Windows Credential Manager) and file I/O can take
+    // hundreds of ms under AV/Credential Guard - keep them off the main
+    // thread so the UI never freezes while status is queried.
     let path = vault_path(&app)?;
-    let vault_exists = path.exists();
-
-    let keyring_ok = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER)
-        .map(|e| {
-            let _ = e.get_password();
-            true
+    let (vault_exists, keyring_ok, master_pw_enabled) =
+        tauri::async_runtime::spawn_blocking(move || {
+            let vault_exists = path.exists();
+            let keyring_ok = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER)
+                .map(|e| {
+                    let _ = e.get_password();
+                    true
+                })
+                .unwrap_or(false);
+            let mut master_pw_enabled = false;
+            if vault_exists {
+                if let Ok(header) = VaultStore::peek_header(&path) {
+                    master_pw_enabled = header.is_some_and(|h| h.master_pw_enabled);
+                }
+            }
+            (vault_exists, keyring_ok, master_pw_enabled)
         })
-        .unwrap_or(false);
-
-    let mut master_pw_enabled = false;
-    if vault_exists {
-        if let Ok(header) = VaultStore::peek_header(&path) {
-            master_pw_enabled = header.is_some_and(|h| h.master_pw_enabled);
-        }
-    }
+        .await
+        .map_err(|e| e.to_string())?;
 
     let entry_count = state.entry_count.load(Ordering::Relaxed);
     Ok(VaultStatus {
@@ -83,65 +93,87 @@ fn validate_master_pw(master_pw: &Option<String>) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn vault_unlock(
+pub async fn vault_unlock(
     app: AppHandle,
     state: State<'_, VaultState>,
     master_pw: Option<String>,
 ) -> Result<(), String> {
     validate_master_pw(&master_pw)?;
     let path = vault_path(&app)?;
-    let store = VaultStore::open(path, master_pw.as_deref()).map_err(|e| e.to_string())?;
-    // Verify the key material actually decrypts the vault before accepting it.
-    // Without this, a wrong master password is silently accepted, the history
-    // appears empty, and the first save re-encrypts with a wrong key —
-    // permanently destroying the vault.
-    let entries = store
-        .load()
-        .map_err(|_| "mot de passe incorrect".to_string())?;
+    // Keyring KEK retrieval + AES-GCM decryption run off the main thread.
+    let (store, entry_count) =
+        tauri::async_runtime::spawn_blocking(move || -> Result<(VaultStore, usize), String> {
+            let store = VaultStore::open(path, master_pw.as_deref()).map_err(|e| e.to_string())?;
+            // Verify the key material actually decrypts the vault before accepting it.
+            // Without this, a wrong master password is silently accepted, the history
+            // appears empty, and the first save re-encrypts with a wrong key —
+            // permanently destroying the vault.
+            let entries = store
+                .load()
+                .map_err(|_| "mot de passe incorrect".to_string())?;
+            Ok((store, entries.len()))
+        })
+        .await
+        .map_err(|e| e.to_string())??;
     state
         .entry_count
-        .store(entries.len() as u32, Ordering::Relaxed);
+        .store(entry_count as u32, Ordering::Relaxed);
     *state.store.lock().unwrap_or_else(|p| p.into_inner()) = Some(store);
     Ok(())
 }
 
 #[tauri::command]
-pub fn vault_load(state: State<'_, VaultState>) -> Result<Vec<HistoryEntry>, String> {
-    let guard = state.store.lock().unwrap_or_else(|p| p.into_inner());
-    let store = guard.as_ref().ok_or("vault not unlocked")?;
-    store.load().map_err(|e| e.to_string())
+pub async fn vault_load(app: AppHandle) -> Result<Vec<HistoryEntry>, String> {
+    let store = app.state::<VaultState>().store.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let guard = store.lock().unwrap_or_else(|p| p.into_inner());
+        let store = guard.as_ref().ok_or("vault not unlocked")?;
+        store.load().map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn vault_save(state: State<'_, VaultState>, entries: Vec<HistoryEntry>) -> Result<(), String> {
-    let mut guard = state.store.lock().unwrap_or_else(|p| p.into_inner());
-    let store = guard.as_mut().ok_or("vault not unlocked")?;
-    store.save(&entries).map_err(|e| e.to_string())?;
-    drop(guard);
-    state
-        .entry_count
-        .store(entries.len() as u32, Ordering::Relaxed);
-    Ok(())
+pub async fn vault_save(app: AppHandle, entries: Vec<HistoryEntry>) -> Result<(), String> {
+    let state = app.state::<VaultState>();
+    let store = state.store.clone();
+    let entry_count = state.entry_count.clone();
+    let n = entries.len();
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut guard = store.lock().unwrap_or_else(|p| p.into_inner());
+        let store = guard.as_mut().ok_or("vault not unlocked")?;
+        store.save(&entries).map_err(|e| e.to_string())?;
+        entry_count.store(n as u32, Ordering::Relaxed);
+        Ok(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn vault_set_master_password(
-    state: State<'_, VaultState>,
+pub async fn vault_set_master_password(
+    app: AppHandle,
     new_pw: Option<String>,
 ) -> Result<(), String> {
     validate_master_pw(&new_pw)?;
-    let mut guard = state.store.lock().unwrap_or_else(|p| p.into_inner());
-    let store = guard.as_mut().ok_or("vault not unlocked")?;
-    store
-        .rotate_master_password(new_pw.as_deref())
-        .map_err(|e| e.to_string())
+    let store = app.state::<VaultState>().store.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut guard = store.lock().unwrap_or_else(|p| p.into_inner());
+        let store = guard.as_mut().ok_or("vault not unlocked")?;
+        store
+            .rotate_master_password(new_pw.as_deref())
+            .map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// Wipe the vault file and keyring KEK. Requires the master password when one
 /// is enabled — wiping is a destructive operation gated by the same secret that
 /// protects the data (CWE-306: missing authentication on destructive command).
 #[tauri::command]
-pub fn vault_clear(
+pub async fn vault_clear(
     app: AppHandle,
     state: State<'_, VaultState>,
     master_pw: Option<String>,
@@ -160,15 +192,21 @@ pub fn vault_clear(
         }
     }
 
-    if path.exists() {
-        std::fs::remove_file(&path).map_err(|e| e.to_string())?;
-    }
-    // Wipe the keyring entry so a fresh KEK is created on next open.
-    if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER) {
-        let _ = entry.delete_credential();
-    }
-    // Reset the in-memory store so subsequent vault_status / vault_unlock reflect the wipe.
-    *state.store.lock().unwrap_or_else(|p| p.into_inner()) = None;
-    state.entry_count.store(0, Ordering::Relaxed);
-    Ok(())
+    let store = state.store.clone();
+    let entry_count = state.entry_count.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        if path.exists() {
+            std::fs::remove_file(&path).map_err(|e| e.to_string())?;
+        }
+        // Wipe the keyring entry so a fresh KEK is created on next open.
+        if let Ok(entry) = keyring::Entry::new(KEYRING_SERVICE, KEYRING_USER) {
+            let _ = entry.delete_credential();
+        }
+        // Reset the in-memory store so subsequent vault_status / vault_unlock reflect the wipe.
+        *store.lock().unwrap_or_else(|p| p.into_inner()) = None;
+        entry_count.store(0, Ordering::Relaxed);
+        Ok(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
