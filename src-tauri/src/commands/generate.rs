@@ -7,10 +7,17 @@ pub fn cmd_generate_password(opts: Option<PasswordOptions>) -> Result<String, St
 }
 
 #[tauri::command]
-pub fn cmd_generate_memorable(app: AppHandle) -> Result<String, String> {
-    memorable::generate_and_track(&app)
-        .map(|z| (*z).clone())
-        .map_err(|e| e.to_string())
+pub async fn cmd_generate_memorable(app: AppHandle) -> Result<String, String> {
+    // Persisting the used-words blacklist touches the disk on every call;
+    // keep it off the main thread.
+    let app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        memorable::generate_and_track(&app)
+            .map(|z| (*z).clone())
+            .map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]

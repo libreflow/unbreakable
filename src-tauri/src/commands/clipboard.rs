@@ -1,12 +1,12 @@
 use crate::errors::{Result, UnbreakableError};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Manager, State};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use zeroize::Zeroizing;
 
 #[derive(Default)]
 pub struct ClipboardState {
-    pub last_written: Mutex<Option<Zeroizing<String>>>,
+    pub last_written: Arc<Mutex<Option<Zeroizing<String>>>>,
 }
 
 /// Crash-recovery sentinel: a SHA-256 of the last secret written to the OS
@@ -57,46 +57,78 @@ pub fn recover_stale_clipboard(app: &AppHandle) {
 }
 
 #[tauri::command]
-pub fn cmd_copy_to_clipboard(
+pub async fn cmd_copy_to_clipboard(
     app: AppHandle,
     state: State<'_, ClipboardState>,
     text: String,
 ) -> Result<()> {
-    app.clipboard()
-        .write_text(text.clone())
-        .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?;
-    write_sentinel(&app, &text);
-    if let Ok(mut g) = state.last_written.lock() {
-        *g = Some(Zeroizing::new(text));
-    }
-    Ok(())
+    // Clipboard I/O + sentinel file write run off the main thread so a slow
+    // or contended clipboard owner (clipboard managers, AV) cannot freeze
+    // the UI event loop.
+    let app = app.clone();
+    let last_written = state.last_written.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        app.clipboard()
+            .write_text(text.clone())
+            .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?;
+        write_sentinel(&app, &text);
+        if let Ok(mut g) = last_written.lock() {
+            *g = Some(Zeroizing::new(text));
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?
 }
 
 #[tauri::command]
-pub fn cmd_clear_clipboard(app: AppHandle, state: State<'_, ClipboardState>) -> Result<()> {
-    app.clipboard()
-        .clear()
-        .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?;
-    if let Ok(mut g) = state.last_written.lock() {
-        *g = None;
-    }
-    clear_sentinel(&app);
-    Ok(())
+pub async fn cmd_clear_clipboard(app: AppHandle, state: State<'_, ClipboardState>) -> Result<()> {
+    let app = app.clone();
+    let last_written = state.last_written.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        app.clipboard()
+            .clear()
+            .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?;
+        if let Ok(mut g) = last_written.lock() {
+            *g = None;
+        }
+        clear_sentinel(&app);
+        Ok(())
+    })
+    .await
+    .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?
 }
 
 #[tauri::command]
-pub fn cmd_read_clipboard(app: AppHandle) -> Result<String> {
-    app.clipboard()
-        .read_text()
-        .map_err(|e| UnbreakableError::Clipboard(e.to_string()))
+pub async fn cmd_read_clipboard(app: AppHandle) -> Result<String> {
+    let app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        app.clipboard()
+            .read_text()
+            .map_err(|e| UnbreakableError::Clipboard(e.to_string()))
+    })
+    .await
+    .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?
 }
 
 /// Clear clipboard only if its current contents match what we last wrote.
 /// Returns true if a clear happened, false if user has since modified clipboard.
 #[tauri::command]
-pub fn cmd_clear_if_ours(app: AppHandle, state: State<'_, ClipboardState>) -> Result<bool> {
-    let guard = state
-        .last_written
+pub async fn cmd_clear_if_ours(app: AppHandle, state: State<'_, ClipboardState>) -> Result<bool> {
+    // Called every 500ms by the TTL timer while a secret is copied: must
+    // never block the main thread.
+    let app = app.clone();
+    let last_written = state.last_written.clone();
+    tauri::async_runtime::spawn_blocking(move || clear_if_ours_impl(&app, &last_written))
+        .await
+        .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?
+}
+
+fn clear_if_ours_impl(
+    app: &AppHandle,
+    last_written: &Mutex<Option<Zeroizing<String>>>,
+) -> Result<bool> {
+    let guard = last_written
         .lock()
         .map_err(|_| UnbreakableError::Clipboard("lock poisoned".into()))?;
     let Some(last) = guard.as_deref() else {
@@ -112,10 +144,10 @@ pub fn cmd_clear_if_ours(app: AppHandle, state: State<'_, ClipboardState>) -> Re
         app.clipboard()
             .clear()
             .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?;
-        if let Ok(mut g) = state.last_written.lock() {
+        if let Ok(mut g) = last_written.lock() {
             *g = None;
         }
-        clear_sentinel(&app);
+        clear_sentinel(app);
         Ok(true)
     } else {
         Ok(false)
