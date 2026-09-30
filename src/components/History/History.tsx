@@ -62,7 +62,8 @@ export function History({ open, onClose }: { open: boolean; onClose: () => void 
   };
 
   return (
-    <aside ref={dialogRef} className="flyout flyout-history" role="dialog" aria-label="Historique" aria-modal="true">
+    <div className="flyout-backdrop" onClick={onClose} aria-hidden="true">
+    <aside ref={dialogRef} className="flyout flyout-history" role="dialog" aria-label="Historique" aria-modal="true" onClick={(e) => e.stopPropagation()}>
       <header className="flyout-header">
         <h2>Historique ({entries.length})</h2>
         <div>
@@ -151,5 +152,6 @@ export function History({ open, onClose }: { open: boolean; onClose: () => void 
         )}
       </div>
     </aside>
+    </div>
   );
 }

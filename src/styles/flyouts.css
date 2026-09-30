@@ -2,6 +2,13 @@
    Flyouts (Settings / History)
    ============================================================ */
 
+.flyout-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 8, 0.55);
+  z-index: 59;
+  animation: fadeIn 160ms ease;
+}
 .flyout {
   position: fixed;
   top: 0;
