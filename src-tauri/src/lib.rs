@@ -8,10 +8,7 @@ mod resident_commands;
 mod shortcuts;
 mod tray;
 
-use commands::clipboard::{
-    cmd_clear_clipboard, cmd_clear_if_ours, cmd_copy_to_clipboard, cmd_read_clipboard,
-    ClipboardState,
-};
+use commands::clipboard::{cmd_clear_if_ours, cmd_copy_to_clipboard, ClipboardState};
 use commands::generate::{
     cmd_generate_memorable, cmd_generate_pair, cmd_generate_passphrase, cmd_generate_password,
 };
@@ -47,15 +44,12 @@ pub fn run() {
             cmd_generate_passphrase,
             cmd_generate_pair,
             cmd_copy_to_clipboard,
-            cmd_clear_clipboard,
-            cmd_read_clipboard,
             cmd_clear_if_ours,
             resident_commands::enable_tray,
             resident_commands::enable_autostart,
             resident_commands::register_shortcut,
             resident_commands::unregister_shortcut,
             resident_commands::show_quick_window,
-            resident_commands::hide_quick_window,
             resident_commands::show_main_window,
             resident_commands::notify_copied,
             resident_commands::notify_clipboard_cleared,

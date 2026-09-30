@@ -2,14 +2,12 @@ import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
 
 export type SecretCopiedPayload = { kind: "password" | "passphrase"; ttl: number };
 export type SettingsChangedPayload = { key: string; value: unknown };
-export type ClipboardClearedPayload = Record<string, never>;
-export type TrayIconStatePayload = { state: "idle" | "active" };
 
 export const EVT = {
   secretCopied: "secret-copied",
   settingsChanged: "settings-changed",
+  // Emitted from Rust (clipboardStore sync); TS only listens.
   clipboardCleared: "clipboard-cleared",
-  trayIconState: "tray-icon-state",
 } as const;
 
 export function isSecretCopiedPayload(p: unknown): p is SecretCopiedPayload {
@@ -24,23 +22,11 @@ export function isSettingsChangedPayload(p: unknown): p is SettingsChangedPayloa
   return typeof o.key === "string";
 }
 
-export function isTrayIconStatePayload(p: unknown): p is TrayIconStatePayload {
-  if (!p || typeof p !== "object") return false;
-  const o = p as Record<string, unknown>;
-  return o.state === "idle" || o.state === "active";
-}
-
 export async function emitSecretCopied(p: SecretCopiedPayload) {
   return emit(EVT.secretCopied, p);
 }
 export async function emitSettingsChanged(p: SettingsChangedPayload) {
   return emit(EVT.settingsChanged, p);
-}
-export async function emitClipboardCleared() {
-  return emit(EVT.clipboardCleared, {});
-}
-export async function emitTrayIconState(p: TrayIconStatePayload) {
-  return emit(EVT.trayIconState, p);
 }
 
 export async function listenSecretCopied(

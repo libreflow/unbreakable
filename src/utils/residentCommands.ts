@@ -12,9 +12,6 @@ export async function registerShortcut(combo: string): Promise<void> {
 export async function unregisterShortcut(): Promise<void> {
   return invoke("unregister_shortcut");
 }
-export async function showQuickWindow(): Promise<void> {
-  return invoke("show_quick_window");
-}
 export async function notifyCopied(kind: "password" | "passphrase", ttl: number): Promise<void> {
   return invoke("notify_copied", { kind, ttl });
 }

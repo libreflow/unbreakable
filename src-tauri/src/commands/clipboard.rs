@@ -81,36 +81,6 @@ pub async fn cmd_copy_to_clipboard(
     .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?
 }
 
-#[tauri::command]
-pub async fn cmd_clear_clipboard(app: AppHandle, state: State<'_, ClipboardState>) -> Result<()> {
-    let app = app.clone();
-    let last_written = state.last_written.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        app.clipboard()
-            .clear()
-            .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?;
-        if let Ok(mut g) = last_written.lock() {
-            *g = None;
-        }
-        clear_sentinel(&app);
-        Ok(())
-    })
-    .await
-    .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?
-}
-
-#[tauri::command]
-pub async fn cmd_read_clipboard(app: AppHandle) -> Result<String> {
-    let app = app.clone();
-    tauri::async_runtime::spawn_blocking(move || {
-        app.clipboard()
-            .read_text()
-            .map_err(|e| UnbreakableError::Clipboard(e.to_string()))
-    })
-    .await
-    .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?
-}
-
 /// Clear clipboard only if its current contents match what we last wrote.
 /// Returns true if a clear happened, false if user has since modified clipboard.
 #[tauri::command]
