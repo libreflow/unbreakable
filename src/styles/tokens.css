@@ -14,7 +14,7 @@
   --rule-strong: #2c4148;
   --acid: #00e68a;
   --acid-deep: #00b06e;
-  --acid-soft: rgba(0, 230, 138, 0.10);
+  --acid-soft: rgba(0, 230, 138, 0.1);
   --warn: #ffb340;
   --danger: #ff4757;
   --good: #00e68a;
@@ -44,14 +44,21 @@
   --rule-strong: #93aa9a;
   --acid: #00854f;
   --acid-deep: #006b40;
-  --acid-soft: rgba(0, 133, 79, 0.10);
+  --acid-soft: rgba(0, 133, 79, 0.1);
   --glow: none;
   --scanline: rgba(0, 133, 79, 0.02);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body, #root { height: 100%; margin: 0; }
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
 
 body {
   font-family: var(--font-body);
@@ -63,7 +70,10 @@ body {
   font-feature-settings: "ss01", "cv11";
 }
 
-::selection { background: var(--acid); color: var(--paper); }
+::selection {
+  background: var(--acid);
+  color: var(--paper);
+}
 
 /* Radial ambient glow + scanline texture — cybersecurity console feel */
 body::before {

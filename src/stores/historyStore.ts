@@ -41,60 +41,60 @@ const debouncedSave = (entries: HistoryEntry[]) => {
 
 export const useHistory = create<HistoryState>((set, get) => {
   scheduleRamExpiry();
-  return ({
-  entries: [],
-  hydrated: false,
+  return {
+    entries: [],
+    hydrated: false,
 
-  hydrate: async () => {
-    try {
-      const loaded = await vault.load();
-      set({ entries: loaded.slice(0, maxEntries()), hydrated: true });
-    } catch (e) {
-      console.error("vault_load failed:", e);
-      set({ entries: [], hydrated: true });
-    }
-  },
+    hydrate: async () => {
+      try {
+        const loaded = await vault.load();
+        set({ entries: loaded.slice(0, maxEntries()), hydrated: true });
+      } catch (e) {
+        console.error("vault_load failed:", e);
+        set({ entries: [], hydrated: true });
+      }
+    },
 
-  add: (kind, plain, score, label) => {
-    const entry: HistoryEntry = {
-      id: crypto.randomUUID(),
-      kind,
-      value: plain,
-      label: label ?? null,
-      score,
-      created_at: new Date().toISOString(),
-    };
-    const next = [entry, ...get().entries].slice(0, maxEntries());
-    set({ entries: next });
-    debouncedSave(next);
-    scheduleRamExpiry();
-  },
+    add: (kind, plain, score, label) => {
+      const entry: HistoryEntry = {
+        id: crypto.randomUUID(),
+        kind,
+        value: plain,
+        label: label ?? null,
+        score,
+        created_at: new Date().toISOString(),
+      };
+      const next = [entry, ...get().entries].slice(0, maxEntries());
+      set({ entries: next });
+      debouncedSave(next);
+      scheduleRamExpiry();
+    },
 
-  remove: (id) => {
-    const next = get().entries.filter((e) => e.id !== id);
-    set({ entries: next });
-    debouncedSave(next);
-  },
-  rename: (id, label) => {
-    const next = get().entries.map((e) =>
-      e.id === id ? { ...e, label: label.trim() || null } : e,
-    );
-    set({ entries: next });
-    debouncedSave(next);
-  },
+    remove: (id) => {
+      const next = get().entries.filter((e) => e.id !== id);
+      set({ entries: next });
+      debouncedSave(next);
+    },
+    rename: (id, label) => {
+      const next = get().entries.map((e) =>
+        e.id === id ? { ...e, label: label.trim() || null } : e,
+      );
+      set({ entries: next });
+      debouncedSave(next);
+    },
 
-  clear: () => {
-    set({ entries: [] });
-    debouncedSave([]);
-  },
-  // RAM-only purge (security idle timeout): drop plaintext from memory
-  // without touching the encrypted vault on disk.
-  purgeFromRam: () => {
-    if (saveTimer) {
-      clearTimeout(saveTimer);
-      saveTimer = null;
-    }
-    set({ entries: [] });
-  },
-  }) as HistoryState;
+    clear: () => {
+      set({ entries: [] });
+      debouncedSave([]);
+    },
+    // RAM-only purge (security idle timeout): drop plaintext from memory
+    // without touching the encrypted vault on disk.
+    purgeFromRam: () => {
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+      }
+      set({ entries: [] });
+    },
+  } as HistoryState;
 });

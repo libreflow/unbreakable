@@ -32,6 +32,8 @@ jobs:
         run: npm ci
       - name: Type-check frontend
         run: npx tsc --noEmit
+      - name: Prettier check
+        run: npm run format:check
       - name: Rust fmt
         working-directory: src-tauri
         run: cargo fmt --check

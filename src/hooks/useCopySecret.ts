@@ -20,7 +20,11 @@ export function useCopySecret() {
   const addHistory = useHistory((s) => s.add);
 
   return useCallback(
-    async (kind: CopiedPanel, secret: string, opts?: { notify?: boolean; crossWindow?: boolean; skipHistory?: boolean }) => {
+    async (
+      kind: CopiedPanel,
+      secret: string,
+      opts?: { notify?: boolean; crossWindow?: boolean; skipHistory?: boolean },
+    ) => {
       const { ttl_seconds, notifications_enabled } = useSettings.getState();
       await copyToClipboard(secret);
       setCopied(kind, ttl_seconds);

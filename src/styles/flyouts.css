@@ -17,18 +17,28 @@
   width: min(460px, 100%);
   background: var(--paper-2);
   border-left: 1px solid var(--acid);
-  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.6), 0 0 30px var(--acid-soft);
+  box-shadow:
+    -20px 0 60px rgba(0, 0, 0, 0.6),
+    0 0 30px var(--acid-soft);
   display: flex;
   flex-direction: column;
   z-index: 60;
   animation: slideIn 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.flyout-history { width: min(580px, 100%); }
+.flyout-history {
+  width: min(580px, 100%);
+}
 
 @keyframes slideIn {
-  from { transform: translateX(40px); opacity: 0; }
-  to   { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .flyout-header {
@@ -48,8 +58,13 @@
   color: var(--ink);
 }
 
-.flyout-header > div { display: flex; gap: 8px; }
-.flyout-header > div > button { padding: 6px 12px; }
+.flyout-header > div {
+  display: flex;
+  gap: 8px;
+}
+.flyout-header > div > button {
+  padding: 6px 12px;
+}
 
 .flyout-body {
   flex: 1;
@@ -106,7 +121,9 @@
   color: var(--ink-dim);
 }
 
-.flyout-body label.check:hover { color: var(--ink); }
+.flyout-body label.check:hover {
+  color: var(--ink);
+}
 
 .flyout-body select,
 .flyout-body input[type="text"],
@@ -121,7 +138,9 @@
   font-size: 13px;
   text-transform: none;
   letter-spacing: 0;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .flyout-body select:focus,
@@ -133,11 +152,27 @@
   box-shadow: 0 0 0 2px var(--acid-soft);
 }
 
-.flyout-body input[type="range"] { width: 100%; accent-color: var(--acid); }
-.flyout-body input[type="checkbox"] { accent-color: var(--acid); width: 16px; height: 16px; }
+.flyout-body input[type="range"] {
+  width: 100%;
+  accent-color: var(--acid);
+}
+.flyout-body input[type="checkbox"] {
+  accent-color: var(--acid);
+  width: 16px;
+  height: 16px;
+}
 
-.flyout-body .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.flyout-body .stack { display: flex; flex-direction: column; gap: 8px; }
+.flyout-body .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.flyout-body .stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
 /* Security warning banner (keyring-only vault) */
 .warning {

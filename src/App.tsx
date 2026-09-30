@@ -13,13 +13,23 @@ import { useGenerator } from "./stores/generatorStore";
 import { useClipboard } from "./stores/clipboardStore";
 import { useSettings } from "./stores/settingsStore";
 import { useHistory } from "./stores/historyStore";
-import { generateMemorable, generatePassphraseFromOpts, generatePassword } from "./utils/tauriCommands";
+import {
+  generateMemorable,
+  generatePassphraseFromOpts,
+  generatePassword,
+} from "./utils/tauriCommands";
 import { vault } from "./utils/vault";
 import { setWindowProtected } from "./utils/windowProtection";
 import { reportError } from "./utils/reportError";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { listenClipboardCleared, listenSecretCopied } from "./utils/crossWindowEvents";
-import { notifyClipboardCleared, enableTray, enableAutostart, registerShortcut, notifyGenerationFailed } from "./utils/residentCommands";
+import {
+  notifyClipboardCleared,
+  enableTray,
+  enableAutostart,
+  registerShortcut,
+  notifyGenerationFailed,
+} from "./utils/residentCommands";
 import { UnlockModal } from "./components/Modals/UnlockModal";
 import { MigrationModal, detectLegacyCount } from "./components/Modals/MigrationModal";
 
@@ -46,10 +56,12 @@ function useAsyncListener(setup: () => Promise<UnlistenFn>, deps: unknown[] = []
   useEffect(() => {
     let cancelled = false;
     let unlisten: UnlistenFn | null = null;
-    setup().then((fn) => {
-      if (cancelled) fn();
-      else unlisten = fn;
-    }).catch((e) => reportError("listener setup", e));
+    setup()
+      .then((fn) => {
+        if (cancelled) fn();
+        else unlisten = fn;
+      })
+      .catch((e) => reportError("listener setup", e));
     return () => {
       cancelled = true;
       unlisten?.();
@@ -148,7 +160,9 @@ function App() {
     useSettings.getState().set({ memorable_default: next });
     const g = useGenerator.getState();
     if (next) {
-      generateMemorable().then(g.setPassword).catch((e) => reportError("memorable", e));
+      generateMemorable()
+        .then(g.setPassword)
+        .catch((e) => reportError("memorable", e));
     } else {
       generatePassword(g.pwdOpts)
         .then(g.setPassword)
@@ -171,7 +185,10 @@ function App() {
         setSettingsOpen(false);
         setHistoryOpen(false);
         setHelpOpen(false);
-      } else if (e.key === "?" && !["INPUT", "TEXTAREA"].includes((document.activeElement?.tagName ?? ""))) {
+      } else if (
+        e.key === "?" &&
+        !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName ?? "")
+      ) {
         setHelpOpen((o) => !o);
       }
     };
@@ -194,19 +211,21 @@ function App() {
   }, []);
 
   useAsyncListener(
-    () => listenClipboardCleared(() => {
-      if (useSettings.getState().notifications_enabled) {
-        notifyClipboardCleared().catch((e) => reportError("notifyClipboardCleared", e));
-      }
-    }),
+    () =>
+      listenClipboardCleared(() => {
+        if (useSettings.getState().notifications_enabled) {
+          notifyClipboardCleared().catch((e) => reportError("notifyClipboardCleared", e));
+        }
+      }),
     [],
   );
 
   // B1: arm TTL timer when QuickPop (or any other window) copies a secret.
   useAsyncListener(
-    () => listenSecretCopied(({ kind, ttl: t }) => {
-      useClipboard.getState().setCopied(kind, t);
-    }),
+    () =>
+      listenSecretCopied(({ kind, ttl: t }) => {
+        useClipboard.getState().setCopied(kind, t);
+      }),
     [],
   );
 
@@ -215,7 +234,11 @@ function App() {
     () =>
       listen<string>("tray-generate-and-copy", async (e) => {
         const kind =
-          e.payload === "passphrase" ? "passphrase" : e.payload === "memorable" ? "memorable" : "password";
+          e.payload === "passphrase"
+            ? "passphrase"
+            : e.payload === "memorable"
+              ? "memorable"
+              : "password";
         try {
           const opts = useGenerator.getState();
           const lang = useSettings.getState().passphrase_lang;
@@ -266,7 +289,10 @@ function App() {
       <div className="modal-overlay">
         <div className="modal" role="alertdialog" aria-label="Erreur au démarrage">
           <h2>Erreur au démarrage</h2>
-          <p>Le coffre n'a pas pu être ouvert. L'application ne peut pas garantir la sauvegarde de l'historique.</p>
+          <p>
+            Le coffre n'a pas pu être ouvert. L'application ne peut pas garantir la sauvegarde de
+            l'historique.
+          </p>
           <div className="error">{boot.message}</div>
           <button onClick={() => window.location.reload()}>Réessayer</button>
         </div>
@@ -295,10 +321,41 @@ function App() {
         </div>
         <div className="app-tagline">Cipher press · pour un secret prêt à coller, sans détour</div>
         <nav className="app-actions" aria-label="Actions principales">
-          <button className="chip chip-primary" onClick={regenerate} aria-label="Régénérer (Espace)" title="Régénérer — Espace / Ctrl+R">↳ Régén</button>
-          <button className={historyOpen ? "chip chip-active" : "chip"} onClick={() => setHistoryOpen(true)} aria-expanded={historyOpen} aria-label="Historique (Ctrl+H)" title="Historique — Ctrl+H">Hist</button>
-          <button className={settingsOpen ? "chip chip-active" : "chip"} onClick={() => setSettingsOpen(true)} aria-expanded={settingsOpen} aria-label="Paramètres (Ctrl+,)" title="Paramètres — Ctrl+,">Réglages</button>
-          <button className={helpOpen ? "chip chip-active" : "chip"} onClick={() => setHelpOpen(true)} aria-expanded={helpOpen} aria-label="Aide (?)" title="Aide — ?">?</button>
+          <button
+            className="chip chip-primary"
+            onClick={regenerate}
+            aria-label="Régénérer (Espace)"
+            title="Régénérer — Espace / Ctrl+R"
+          >
+            ↳ Régén
+          </button>
+          <button
+            className={historyOpen ? "chip chip-active" : "chip"}
+            onClick={() => setHistoryOpen(true)}
+            aria-expanded={historyOpen}
+            aria-label="Historique (Ctrl+H)"
+            title="Historique — Ctrl+H"
+          >
+            Hist
+          </button>
+          <button
+            className={settingsOpen ? "chip chip-active" : "chip"}
+            onClick={() => setSettingsOpen(true)}
+            aria-expanded={settingsOpen}
+            aria-label="Paramètres (Ctrl+,)"
+            title="Paramètres — Ctrl+,"
+          >
+            Réglages
+          </button>
+          <button
+            className={helpOpen ? "chip chip-active" : "chip"}
+            onClick={() => setHelpOpen(true)}
+            aria-expanded={helpOpen}
+            aria-label="Aide (?)"
+            title="Aide — ?"
+          >
+            ?
+          </button>
         </nav>
       </header>
 
@@ -321,17 +378,64 @@ function App() {
 
       {helpOpen && (
         <div className="overlay" onClick={() => setHelpOpen(false)}>
-          <div ref={helpCardRef} className="help-card" role="dialog" aria-modal="true" aria-label="Raccourcis clavier" onClick={(e) => e.stopPropagation()}>
+          <div
+            ref={helpCardRef}
+            className="help-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Raccourcis clavier"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2>Raccourcis</h2>
             <dl className="kbd-list">
-              <div><dt><kbd>Ctrl</kbd>+<kbd>R</kbd> · <kbd>Espace</kbd></dt><dd>Régénérer</dd></div>
-              <div><dt><kbd>Ctrl</kbd>+<kbd>C</kbd></dt><dd>Copier le mot de passe</dd></div>
-              <div><dt><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd></dt><dd>Copier la passphrase</dd></div>
-              <div><dt><kbd>Ctrl</kbd>+<kbd>M</kbd></dt><dd>Mode mémorable FR</dd></div>
-              <div><dt><kbd>Ctrl</kbd>+<kbd>H</kbd></dt><dd>Historique</dd></div>
-              <div><dt><kbd>Ctrl</kbd>+<kbd>,</kbd></dt><dd>Paramètres</dd></div>
-              <div><dt><kbd>?</kbd></dt><dd>Cette aide</dd></div>
-              <div><dt><kbd>Échap</kbd></dt><dd>Fermer</dd></div>
+              <div>
+                <dt>
+                  <kbd>Ctrl</kbd>+<kbd>R</kbd> · <kbd>Espace</kbd>
+                </dt>
+                <dd>Régénérer</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>Ctrl</kbd>+<kbd>C</kbd>
+                </dt>
+                <dd>Copier le mot de passe</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd>
+                </dt>
+                <dd>Copier la passphrase</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>Ctrl</kbd>+<kbd>M</kbd>
+                </dt>
+                <dd>Mode mémorable FR</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>Ctrl</kbd>+<kbd>H</kbd>
+                </dt>
+                <dd>Historique</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>Ctrl</kbd>+<kbd>,</kbd>
+                </dt>
+                <dd>Paramètres</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>?</kbd>
+                </dt>
+                <dd>Cette aide</dd>
+              </div>
+              <div>
+                <dt>
+                  <kbd>Échap</kbd>
+                </dt>
+                <dd>Fermer</dd>
+              </div>
             </dl>
             <button onClick={() => setHelpOpen(false)}>Fermer</button>
           </div>

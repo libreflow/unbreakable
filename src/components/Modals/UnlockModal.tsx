@@ -51,24 +51,37 @@ export function UnlockModal({ onUnlocked, onForgotten }: Props) {
             type="password"
             autoFocus
             value={pw}
-            onChange={(e) => { setPw(e.target.value); setError(null); }}
+            onChange={(e) => {
+              setPw(e.target.value);
+              setError(null);
+            }}
             placeholder="Mot de passe maître"
             disabled={remaining > 0}
           />
           {error && <div className="error">{error}</div>}
-          {remaining > 0 && <div className="error">Veuillez patienter {Math.ceil(remaining/1000)}s…</div>}
-          <button type="submit" disabled={!pw || remaining > 0}>Déverrouiller</button>
+          {remaining > 0 && (
+            <div className="error">Veuillez patienter {Math.ceil(remaining / 1000)}s…</div>
+          )}
+          <button type="submit" disabled={!pw || remaining > 0}>
+            Déverrouiller
+          </button>
         </form>
         {forgotArmed ? (
           <div className="stack" role="alertdialog" aria-label="Confirmation de destruction">
-            <span className="warning">⚠ Effacer le coffre et perdre tout l'historique ? Action irréversible.</span>
+            <span className="warning">
+              ⚠ Effacer le coffre et perdre tout l'historique ? Action irréversible.
+            </span>
             <div className="confirm-clear" role="group">
-              <button className="danger" onClick={() => onForgotten(pw)}>Oui, tout effacer</button>
+              <button className="danger" onClick={() => onForgotten(pw)}>
+                Oui, tout effacer
+              </button>
               <button onClick={() => setForgotArmed(false)}>Annuler</button>
             </div>
           </div>
         ) : (
-          <button className="link" onClick={() => setForgotArmed(true)}>J'ai oublié mon mot de passe…</button>
+          <button className="link" onClick={() => setForgotArmed(true)}>
+            J'ai oublié mon mot de passe…
+          </button>
         )}
       </div>
     </div>

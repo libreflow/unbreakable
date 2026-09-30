@@ -57,7 +57,14 @@ export function ClipboardBadge() {
         {ttl > 0 ? (
           <div className="ttl-clock">
             <svg width="84" height="84" viewBox="0 0 84 84" aria-hidden="true" focusable="false">
-              <circle cx="42" cy="42" r={RADIUS} fill="none" strokeWidth="4" className="ttl-track" />
+              <circle
+                cx="42"
+                cy="42"
+                r={RADIUS}
+                fill="none"
+                strokeWidth="4"
+                className="ttl-track"
+              />
               <circle
                 cx="42"
                 cy="42"
@@ -88,7 +95,9 @@ export function ClipboardBadge() {
   if (status === "expired") {
     return (
       <div className="hero-cell" role="status" aria-live="polite">
-        <span className="stamp" data-variant="expired">EXPIRÉ</span>
+        <span className="stamp" data-variant="expired">
+          EXPIRÉ
+        </span>
         <div className="status-block">
           <div className="status-eyebrow">Presse-papiers · effacé</div>
           <div className="status-headline" data-status="expired">
@@ -101,7 +110,9 @@ export function ClipboardBadge() {
 
   return (
     <div className="hero-cell" role="status" aria-live="polite">
-      <span className="stamp" data-variant="modified">COLLÉ</span>
+      <span className="stamp" data-variant="modified">
+        COLLÉ
+      </span>
       <div className="status-block">
         <div className="status-eyebrow">Presse-papiers · libre</div>
         <div className="status-headline" data-status="modified">
