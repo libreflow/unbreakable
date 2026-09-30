@@ -128,11 +128,17 @@ fn clear_if_ours_impl(
     app: &AppHandle,
     last_written: &Mutex<Option<Zeroizing<String>>>,
 ) -> Result<bool> {
-    let guard = last_written
-        .lock()
-        .map_err(|_| UnbreakableError::Clipboard("lock poisoned".into()))?;
-    let Some(last) = guard.as_deref() else {
-        return Ok(false);
+    // Snapshot under a short lock, then release before the clipboard I/O:
+    // holding the mutex across a slow clipboard read could block the close
+    // handler (and anything else touching the mutex) for the full I/O delay.
+    let last = {
+        let guard = last_written
+            .lock()
+            .map_err(|_| UnbreakableError::Clipboard("lock poisoned".into()))?;
+        match guard.as_deref() {
+            Some(last) => last.to_string(),
+            None => return Ok(false),
+        }
     };
 
     let current = app
@@ -140,7 +146,7 @@ fn clear_if_ours_impl(
         .read_text()
         .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?;
 
-    if current.as_str() == last {
+    if current.as_str() == last.as_str() {
         app.clipboard()
             .clear()
             .map_err(|e| UnbreakableError::Clipboard(e.to_string()))?;
