@@ -182,8 +182,9 @@ impl VaultStore {
         let ciphertext = &buf[header_len..];
 
         let dek = derive_dek(&self.kek[..], self.mpk.as_deref().map(|m| &m[..]));
-        let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&dek[..]));
-        let nonce = Nonce::from_slice(nonce_bytes);
+        let key = Key::<Aes256Gcm>::try_from(&dek[..]).expect("DEK length");
+        let cipher = Aes256Gcm::new(&key);
+        let nonce = &Nonce::try_from(nonce_bytes).expect("nonce length");
         let plaintext = cipher
             .decrypt(nonce, ciphertext)
             .map_err(|_| VaultError::DecryptFailed)?;
@@ -196,8 +197,9 @@ impl VaultStore {
         fill(&mut nonce_bytes)?;
 
         let dek = derive_dek(&self.kek[..], self.mpk.as_deref().map(|m| &m[..]));
-        let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&dek[..]));
-        let nonce = Nonce::from_slice(&nonce_bytes);
+        let key = Key::<Aes256Gcm>::try_from(&dek[..]).expect("DEK length");
+        let cipher = Aes256Gcm::new(&key);
+        let nonce = &Nonce::from(nonce_bytes);
         let plaintext = serde_json::to_vec(entries)?;
         let ciphertext = cipher
             .encrypt(nonce, plaintext.as_ref())

@@ -1,21 +1,18 @@
-import { zxcvbn, zxcvbnOptions } from "@zxcvbn-ts/core";
+import { Options, ZxcvbnFactory } from "@zxcvbn-ts/core";
 import * as zxcvbnCommonPackage from "@zxcvbn-ts/language-common";
 import * as zxcvbnEnPackage from "@zxcvbn-ts/language-en";
 
-let _initialized = false;
-
-function ensureInit(): void {
-  if (_initialized) return;
-  zxcvbnOptions.setOptions({
-    translations: zxcvbnEnPackage.translations,
-    graphs: zxcvbnCommonPackage.adjacencyGraphs,
-    dictionary: {
-      ...zxcvbnCommonPackage.dictionary,
-      ...zxcvbnEnPackage.dictionary,
-    },
-  });
-  _initialized = true;
-}
+const options = new Options({
+  translations: zxcvbnEnPackage.translations,
+  graphs: zxcvbnCommonPackage.adjacencyGraphs,
+  dictionary: {
+    ...zxcvbnCommonPackage.dictionary,
+    ...zxcvbnEnPackage.dictionary,
+  },
+});
+const zxcvbn = new ZxcvbnFactory(options);
+// bind: check() relies on the factory instance
+const check = (secret: string) => zxcvbn.check(secret);
 
 export interface StrengthResult {
   score: 0 | 1 | 2 | 3 | 4;
@@ -41,8 +38,7 @@ export function analyzeStrength(secret: string): StrengthResult {
     cache.set(secret, hit);
     return hit;
   }
-  ensureInit();
-  const res = zxcvbn(secret);
+  const res = check(secret);
   const score = res.score as 0 | 1 | 2 | 3 | 4;
   const bits = res.guessesLog10 * Math.log2(10);
   const result: StrengthResult = { score, bits, label: LABELS[score], cssClass: CSS[score] };
