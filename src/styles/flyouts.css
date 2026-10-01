@@ -14,7 +14,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(460px, 100%);
+  width: min(460px, 92vw);
   background: var(--paper-2);
   border-left: 1px solid var(--acid);
   box-shadow:
@@ -27,7 +27,7 @@
 }
 
 .flyout-history {
-  width: min(580px, 100%);
+  width: min(580px, 95vw);
 }
 
 @keyframes slideIn {
